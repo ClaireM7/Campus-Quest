@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Campus Quest · Hi-Fi Prototype</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; height: 100%; }
+    body {
+      font-family: "Inter", "Noto Sans SC", system-ui, -apple-system, sans-serif;
+      background: #0F0E0A;
+      color: #15140F;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    .display { font-family: "Space Grotesk", "Noto Sans SC", sans-serif; letter-spacing: -0.02em; }
+    .mono    { font-family: "JetBrains Mono", ui-monospace, monospace; font-feature-settings: "tnum"; }
+    button { font-family: inherit; cursor: pointer; border: 0; background: transparent; padding: 0; color: inherit; }
+    a { color: inherit; text-decoration: none; }
+
+    /* Stage scaling so the 390×844 phone stays centered & legible on any screen */
+    .stage {
+      position: fixed; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      background:
+        radial-gradient(80% 60% at 50% 20%, #1d1c16 0%, #0F0E0A 60%);
+    }
+    .stage::before {
+      content: ""; position: absolute; inset: 0;
+      background-image: radial-gradient(rgba(255,255,255,0.04) 1px, transparent 1px);
+      background-size: 24px 24px; pointer-events: none;
+    }
+    .device {
+      position: relative;
+      width: 390px; height: 844px;
+      border-radius: 52px;
+      background: #15140F;
+      box-shadow:
+        0 60px 120px rgba(0,0,0,0.6),
+        0 20px 40px rgba(0,0,0,0.4),
+        inset 0 0 0 2px #2a2820,
+        inset 0 0 0 8px #15140F;
+      padding: 8px;
+    }
+    .screen {
+      width: 100%; height: 100%;
+      border-radius: 44px;
+      overflow: hidden;
+      background: #F1ECDF;
+      position: relative;
+      isolation: isolate;
+    }
+    /* notch */
+    .device::after {
+      content: ""; position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
+      width: 120px; height: 32px; background: #15140F; border-radius: 20px; z-index: 5;
+    }
+    /* side label */
+    .side {
+      position: fixed; top: 24px; left: 24px; color: rgba(255,255,255,0.55);
+      font-family: "JetBrains Mono", monospace; font-size: 11px; letter-spacing: 1.6px;
+      text-transform: uppercase;
+    }
+    .side b { color: #C9F23E; font-weight: 600; }
+    .hint {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+      color: rgba(255,255,255,0.4);
+      font-family: "JetBrains Mono", monospace; font-size: 10px; letter-spacing: 1.2px;
+      text-transform: uppercase;
+    }
+    .hint kbd {
+      background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 4px; padding: 2px 6px; margin: 0 3px; color: rgba(255,255,255,0.7);
+    }
+    /* Hide scrollbars in scrolling regions but keep functionality */
+    .noscroll::-webkit-scrollbar { display: none; }
+    .noscroll { scrollbar-width: none; -ms-overflow-style: none; }
+
+    @media (max-width: 460px) {
+      .device { transform: scale(0.92); }
+      .side, .hint { display: none; }
+    }
+  </style>
+  <script defer src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script defer src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script defer src="prototype.bundle.js"></script>
+</head>
+<body>
+  <div class="side">
+    <span>CAMPUS QUEST</span> · <b>S04 · 湖畔之春</b><br/>
+    <span style="opacity:0.6">HI-FI PROTOTYPE · CORNELL ITHACA</span>
+  </div>
+  <div class="hint">
+    点击底部 <kbd>Tab</kbd> 切换 · 卡片可点 · 任务可完成
+  </div>
+  <div class="stage">
+    <div class="device" id="device">
+      <div class="screen" id="root"></div>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,1124 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Campus Quest · 校园里的赛季运动游戏</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: "Inter", "Noto Sans SC", system-ui, -apple-system, sans-serif;
+      background: #F1ECDF;
+      color: #15140F;
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+    }
+    .display { font-family: "Space Grotesk", "Noto Sans SC", sans-serif; letter-spacing: -0.02em; }
+    .mono { font-family: "JetBrains Mono", ui-monospace, monospace; font-feature-settings: "tnum"; }
+    button { font-family: inherit; cursor: pointer; border: 0; background: transparent; padding: 0; color: inherit; }
+    a { color: inherit; text-decoration: none; }
+
+    @keyframes cq-fade-up { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes cq-pulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
+    @keyframes cq-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+    @keyframes cq-shimmer { 0% { background-position: -120% 0; } 100% { background-position: 220% 0; } }
+    @keyframes cq-spin { from { transform: rotate(0); } to { transform: rotate(360deg); } }
+
+    .cq-fade-up { animation: cq-fade-up 600ms ease-out both; }
+    .cq-fade-1 { animation-delay: 80ms; }
+    .cq-fade-2 { animation-delay: 160ms; }
+    .cq-fade-3 { animation-delay: 240ms; }
+    .cq-fade-4 { animation-delay: 320ms; }
+    .cq-fade-5 { animation-delay: 400ms; }
+    .cq-fade-6 { animation-delay: 480ms; }
+
+    .cq-card { transition: transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease; }
+    .cq-card:hover { transform: translateY(-4px); box-shadow: 0 16px 36px rgba(20,18,12,0.10); }
+
+    .cta-pri { transition: transform 180ms, box-shadow 180ms, background 180ms; }
+    .cta-pri:hover { transform: translateY(-2px); box-shadow: 0 14px 28px rgba(20,18,12,0.30); }
+    .cta-pri:active { transform: translateY(0); }
+    .cta-sec { transition: background 180ms, border-color 180ms; }
+    .cta-sec:hover { background: #EBE3CB; border-color: #15140F !important; }
+
+    .softscroll::-webkit-scrollbar { width: 10px; height: 10px; }
+    .softscroll::-webkit-scrollbar-track { background: transparent; }
+    .softscroll::-webkit-scrollbar-thumb { background: rgba(20,18,12,0.10); border-radius: 8px; border: 2px solid transparent; background-clip: padding-box; }
+    .softscroll::-webkit-scrollbar-thumb:hover { background: rgba(20,18,12,0.20); }
+
+    .grid-bg::before {
+      content: ''; position: absolute; inset: 0;
+      background-image: radial-gradient(rgba(20,18,12,0.05) 1px, transparent 1px);
+      background-size: 24px 24px; pointer-events: none;
+    }
+
+    .frame-mobile { display: none; width: 100%; height: 100vh; }
+    .frame-web { display: none; width: 100%; height: 100vh; }
+    .show { display: block !important; }
+
+    /* Stage for the embedded mobile preview */
+    .demo-stage {
+      position: fixed; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      background: radial-gradient(80% 60% at 50% 20%, #1d1c16 0%, #0F0E0A 60%);
+      z-index: 0;
+    }
+    .demo-stage::before {
+      content: ""; position: absolute; inset: 0;
+      background-image: radial-gradient(rgba(255,255,255,0.04) 1px, transparent 1px);
+      background-size: 24px 24px; pointer-events: none;
+    }
+
+    .iframe-shell {
+      position: fixed; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      background: #F1ECDF;
+      z-index: 0;
+    }
+    .iframe-shell iframe {
+      border: 0; width: 100%; height: 100%;
+      background: #F1ECDF;
+    }
+
+    .topnav {
+      position: fixed; top: 0; left: 0; right: 0;
+      padding: 12px 20px;
+      background: rgba(241,236,223,0.92);
+      backdrop-filter: saturate(140%) blur(12px);
+      border-bottom: 1px solid #DCD3B8;
+      display: flex; align-items: center; justify-content: space-between;
+      z-index: 100;
+    }
+    .topnav-app {
+      background: rgba(15,14,10,0.78);
+      border-bottom-color: rgba(255,255,255,0.10);
+      color: #FFF;
+    }
+
+    @media (max-width: 740px) {
+      .hero-grid { grid-template-columns: 1fr !important; }
+      .features-grid { grid-template-columns: 1fr !important; }
+      .modules-grid { grid-template-columns: 1fr !important; }
+      .h-display { font-size: 38px !important; }
+      .cta-row { flex-direction: column; }
+      .cta-row > * { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.25.6/babel.min.js" crossorigin="anonymous"></script>
+
+  <script type="text/babel" data-presets="env,react">
+    const { useState, useEffect, useMemo } = React;
+    const SUPABASE_URL = 'https://ifnatkxrjhfmzjqpjwoz.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_wUZglj2ckHlJlS6y39Hk6A_8tMaS9Ta';
+    const IS_FILE_PROTOCOL = window.location.protocol === 'file:';
+    const HAS_REAL_AUTH = !IS_FILE_PROTOCOL && window.supabase && SUPABASE_URL && SUPABASE_KEY;
+    const sb = HAS_REAL_AUTH
+      ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+          auth: { persistSession: true, autoRefreshToken: true }
+        })
+      : null;
+
+    /* === ICONS === */
+    const Ic = {
+      Map: ({s=20,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2V6z"/><path d="M9 4v16M15 6v16"/></svg>,
+      Phone: ({s=20,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M11 18h2"/></svg>,
+      Desktop: ({s=20,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M10 17v4M14 17v4"/></svg>,
+      Spark: ({s=14,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill={c}><path d="M12 2l1.8 5.4L19 9l-5.2 1.6L12 16l-1.8-5.4L5 9l5.2-1.6L12 2zm6 11l1 3 3 1-3 1-1 3-1-3-3-1 3-1 1-3z"/></svg>,
+      ArrowR: ({s=16,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>,
+      ArrowL: ({s=16,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>,
+      Compass: ({s=20,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5 5-2z"/></svg>,
+      Walk: ({s=20,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="13" cy="4" r="1.6"/><path d="M9 21l3-7 3 3 3 1"/><path d="M5 13l3-3 3 1 2 3"/></svg>,
+      Group: ({s=20,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="9" r="3"/><circle cx="17" cy="10" r="2.4"/><path d="M3 19c.8-3 3-4.5 6-4.5s5.2 1.5 6 4.5"/><path d="M15 19c.5-2 2-3 3.5-3"/></svg>,
+      Trophy: ({s=20,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M7 4h10v4a5 5 0 0 1-10 0V4z"/><path d="M5 6H3v2a3 3 0 0 0 3 3M19 6h2v2a3 3 0 0 1-3 3"/><path d="M10 14h4v3l1 3H9l1-3v-3z"/></svg>,
+      Lightning: ({s=14,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill={c}><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z"/></svg>,
+      Flame: ({s=16,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill={c}><path d="M12 2s5 4 5 9a5 5 0 1 1-10 0c0-2 1-3 2-4-1 3 2 4 2 4s-2-3 1-9z"/></svg>,
+      Stretch: ({s=20,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="4" r="1.7"/><path d="M5 10l4-2 3 1 3-1 4 2"/><path d="M9 9l1 6-2 5"/><path d="M15 9l-1 6 2 5"/></svg>,
+      Run: ({s=20,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="14" cy="4" r="1.6"/><path d="M5 21l4-6-2-3 4-3 3 3 3 1"/><path d="M14 9l-2 5"/></svg>,
+      Pin: ({s=18,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s7-7.5 7-13a7 7 0 1 0-14 0c0 5.5 7 13 7 13z"/><circle cx="12" cy="9" r="2.5"/></svg>,
+    };
+
+    /* === TOKENS === */
+    const T = {
+      bg: '#F1ECDF', ink: '#15140F', ink2: '#3A382E', muted: '#736B57', subtle: '#A89E82',
+      surface: '#FFFDF7', cardAlt: '#EFE8D2', line: '#DCD3B8',
+      lime: '#C9F23E', limeDeep: '#7FA01F', coral: '#FF6A3D', amber: '#FFB547',
+      blue: '#5B8DF6', green: '#4A8050', brownDeep: '#15140F',
+    };
+
+    /* === LANDING === */
+    function Landing({onPickApp, onPickWeb, onOpenLogin, demoUser}) {
+      return (
+        <div className="softscroll" style={{height:'100vh', overflowY:'auto', overflowX:'hidden'}}>
+          {/* TOP NAV */}
+          <header style={{
+            display:'flex', alignItems:'center', justifyContent:'space-between',
+            padding:'18px 32px', position:'sticky', top: 0, zIndex: 50,
+            background:'rgba(241,236,223,0.85)', backdropFilter:'saturate(140%) blur(8px)',
+            borderBottom:`1px solid rgba(220,211,184,0.6)`,
+          }}>
+            <div style={{display:'flex', alignItems:'center', gap: 10}}>
+              <div style={{
+                width: 38, height: 38, borderRadius: 11,
+                background: T.brownDeep, color: T.lime,
+                display:'grid', placeItems:'center',
+                fontFamily:'"Space Grotesk"', fontWeight: 700, fontSize: 16,
+                letterSpacing:'-0.04em',
+              }}>CQ</div>
+              <div>
+                <div className="display" style={{fontSize: 15, fontWeight: 700, color: T.ink, lineHeight: 1.05}}>Campus Quest</div>
+                <div className="mono" style={{fontSize: 9.5, color: T.muted, letterSpacing:'0.10em', marginTop: 1}}>S04 · 湖畔之春</div>
+              </div>
+            </div>
+            <div style={{display:'flex', gap: 8, alignItems:'center'}}>
+              <a href="#features" style={{fontSize: 13, color: T.ink2, padding:'8px 12px'}}>核心模块</a>
+              <a href="#preview" style={{fontSize: 13, color: T.ink2, padding:'8px 12px'}}>试玩</a>
+              <a href="#about" style={{fontSize: 13, color: T.ink2, padding:'8px 12px'}}>关于</a>
+            </div>
+          </header>
+
+          {/* HERO */}
+          <section className="grid-bg" style={{
+            position:'relative', overflow:'hidden',
+            padding:'72px 32px 48px',
+            background:'linear-gradient(180deg, #F1ECDF 0%, #ECE3C8 100%)',
+          }}>
+            <div style={{maxWidth: 1280, margin:'0 auto', position:'relative'}}>
+              <div className="hero-grid" style={{display:'grid', gridTemplateColumns:'1.1fr 1fr', gap: 48, alignItems:'center'}}>
+                <div>
+                  <div className="cq-fade-up" style={{display:'inline-flex', alignItems:'center', gap: 6,
+                    background:'rgba(20,18,12,0.06)', padding:'6px 12px', borderRadius: 999,
+                    fontSize: 11, color: T.ink2, letterSpacing:'0.10em', marginBottom: 22,
+                  }} className="mono cq-fade-up">
+                    <Ic.Spark s={11} c={T.coral}/>
+                    SEASON 04 · LAKESIDE SPRING · CORNELL
+                  </div>
+                  <h1 className="display h-display cq-fade-up cq-fade-1" style={{
+                    fontSize: 72, fontWeight: 700,
+                    color: T.ink, letterSpacing:'-0.03em',
+                    lineHeight: 1.02, margin: 0,
+                  }}>
+                    把校园
+                    <span style={{
+                      background:`linear-gradient(120deg, ${T.coral} 0%, ${T.amber} 100%)`,
+                      WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent',
+                    }}>变成</span>
+                    <br/>
+                    一场赛季运动游戏。
+                  </h1>
+                  <p className="cq-fade-up cq-fade-2" style={{
+                    fontSize: 17, color: T.ink2, lineHeight: 1.6,
+                    marginTop: 22, marginBottom: 28, maxWidth: 540,
+                  }}>
+                    Campus Quest 是一款面向大学生校园场景的赛季制运动游戏化产品。<br/>
+                    以校园地图为核心载体，把跑步、步行、训练、拉伸、组队都接入同一套
+                    <b style={{color: T.ink}}>「任务 · 徽章 · 赛季」</b>成长体系。
+                  </p>
+
+                  <div className="cta-row cq-fade-up cq-fade-3" style={{display:'flex', gap: 12, flexWrap:'wrap'}}>
+                    <button onClick={onPickApp} className="cta-pri" style={{
+                      background: T.brownDeep, color:'#FFF',
+                      padding:'14px 22px', borderRadius: 14,
+                      fontSize: 15, fontWeight: 600,
+                      display:'flex', alignItems:'center', gap: 8,
+                      boxShadow:'0 10px 24px rgba(20,18,12,0.20)',
+                    }}>
+                      <Ic.Phone s={17} c={T.lime}/>
+                      试玩 App 端 Demo
+                      <Ic.ArrowR s={14} c="#FFF"/>
+                    </button>
+                    <button onClick={onPickWeb} className="cta-sec" style={{
+                      background: T.surface, color: T.ink,
+                      padding:'14px 22px', borderRadius: 14,
+                      fontSize: 15, fontWeight: 600,
+                      border:`1px solid ${T.line}`,
+                      display:'flex', alignItems:'center', gap: 8,
+                    }}>
+                      <Ic.Desktop s={17} c={T.ink}/>
+                      试玩网页端 Demo
+                      <Ic.ArrowR s={14} c={T.muted}/>
+                    </button>
+                  </div>
+
+                  <div className="cq-fade-up cq-fade-4" style={{
+                    display:'flex', gap: 22, marginTop: 28,
+                    fontSize: 12, color: T.muted, flexWrap:'wrap',
+                  }}>
+                    <span style={{display:'flex', alignItems:'center', gap: 5}}>
+                      <span style={{width: 6, height: 6, borderRadius: 99, background: T.lime}}/>赛季制 · 学期周期
+                    </span>
+                    <span style={{display:'flex', alignItems:'center', gap: 5}}>
+                      <span style={{width: 6, height: 6, borderRadius: 99, background: T.coral}}/>校园地图任务
+                    </span>
+                    <span style={{display:'flex', alignItems:'center', gap: 5}}>
+                      <span style={{width: 6, height: 6, borderRadius: 99, background: T.amber}}/>多运动输入
+                    </span>
+                    <span style={{display:'flex', alignItems:'center', gap: 5}}>
+                      <span style={{width: 6, height: 6, borderRadius: 99, background: T.blue}}/>轻协作 · 临时组队
+                    </span>
+                  </div>
+                </div>
+
+                {/* HERO VISUAL */}
+                <div className="cq-fade-up cq-fade-2" style={{position:'relative', minHeight: 480}}>
+                  <HeroVisual onPickApp={onPickApp} onPickWeb={onPickWeb}/>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* WHY */}
+          <section style={{padding:'56px 32px', background: T.bg}}>
+            <div style={{maxWidth: 1280, margin:'0 auto'}}>
+              <div className="mono" style={{fontSize: 11, color: T.coral, letterSpacing:'0.16em', fontWeight: 700, marginBottom: 12}}>
+                — WHY CAMPUS QUEST
+              </div>
+              <h2 className="display" style={{fontSize: 36, fontWeight: 600, color: T.ink, letterSpacing:'-0.02em', maxWidth: 880, lineHeight: 1.15, margin:'0 0 14px'}}>
+                大学生不缺运动场景，
+                <br/>
+                缺的是「为什么今天还要继续」。
+              </h2>
+              <p style={{fontSize: 15, color: T.muted, lineHeight: 1.65, maxWidth: 760, margin:0}}>
+                传统运动产品偏工具化 — 强调记录、数据、结果。但对普通大学生而言，真正的困难是动机的持续。
+                Campus Quest 把校园清晰的地理边界、高频线下移动、半熟人社交、学期周期，重新设计为一种
+                <b style={{color: T.ink2}}>可探索 · 可协作 · 可积累荣誉</b>的共玩体验。
+              </p>
+
+              <div className="features-grid" style={{
+                display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap: 14,
+                marginTop: 36,
+              }}>
+                {[
+                  { t:'校园原生', d:'以真实校园地理空间为主要设计基础，不是通用运动 App 的校园版', c: T.coral },
+                  { t:'行为优先', d:'地点只触发任务，真正决定完成的是用户的实际运动行为', c: T.lime },
+                  { t:'轻游戏化', d:'赛季 · 地图 · 徽章 · 称号 · 但不做重度复杂游戏系统', c: T.amber },
+                  { t:'轻社交', d:'共同参与 · 临时协作 · 不做强绑定监督和强比较', c: T.blue },
+                ].map((f, i) => (
+                  <div key={i} className="cq-card" style={{
+                    background: T.surface, borderRadius: 18,
+                    border:`1px solid ${T.line}`, padding: 22,
+                  }}>
+                    <div style={{
+                      width: 32, height: 32, borderRadius: 10,
+                      background: f.c, marginBottom: 16, opacity: 0.92,
+                    }}/>
+                    <div className="display" style={{fontSize: 18, fontWeight: 600, color: T.ink}}>
+                      {f.t}
+                    </div>
+                    <div style={{fontSize: 13, color: T.muted, marginTop: 6, lineHeight: 1.5}}>
+                      {f.d}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          {/* MODULES */}
+          <section id="features" style={{padding:'56px 32px', background: T.surface, borderTop: `1px solid ${T.line}`, borderBottom: `1px solid ${T.line}`}}>
+            <div style={{maxWidth: 1280, margin:'0 auto'}}>
+              <div className="mono" style={{fontSize: 11, color: T.coral, letterSpacing:'0.16em', fontWeight: 700, marginBottom: 12}}>
+                — CORE MODULES
+              </div>
+              <h2 className="display" style={{fontSize: 32, fontWeight: 600, color: T.ink, letterSpacing:'-0.02em', margin:'0 0 36px'}}>
+                五个模块构成完整闭环
+              </h2>
+
+              <div className="modules-grid" style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap: 16}}>
+                <ModuleCard
+                  num="01" title="Season Hub · 赛季首页" tone={T.brownDeep} fg={T.lime}
+                  Icon={Ic.Spark}
+                  desc="承载用户每天打开后的核心信息：赛季主题 · 今日任务 · 活力值 · 最近事件 · 徽章进度 · 协作摘要。"
+                  bullets={['赛季横幅与目标', '今日任务推荐', '本周积分进度']}
+                />
+                <ModuleCard
+                  num="02" title="Campus Quest Map · 校园地图" tone="#5B8DF6" fg="#FFF"
+                  Icon={Ic.Map}
+                  desc="将真实校园空间转化为游戏场景。宿舍、图书馆、操场、湖边、体育馆触发不同类型任务。"
+                  bullets={['校园地图浏览', '区域点亮进度', '限时事件刷新']}
+                />
+                <ModuleCard
+                  num="03" title="多运动输入系统" tone="#FF6A3D" fg="#FFF"
+                  Icon={Ic.Run}
+                  desc="探索 · 训练 · 恢复 · 社交四类运动同框架累计成长，避免只服务跑步场景。"
+                  bullets={['步行 / 跑步 / 骑行', '健身 / HIIT / 力量', '拉伸 / 球类 / 舞蹈']}
+                />
+                <ModuleCard
+                  num="04" title="Badge & Season Archive" tone="#FFB547" fg="#15140F"
+                  Icon={Ic.Trophy}
+                  desc="长期激励与成就沉淀核心。任务徽章 · 地点徽章 · 限定徽章 · 阶段称号 · 历史档案。"
+                  bullets={['操场夜行者', '图书馆回血达人', '校园探索先锋']}
+                />
+                <ModuleCard
+                  num="05" title="Campus Play · 共玩" tone="#7FA01F" fg="#FFF"
+                  Icon={Ic.Group}
+                  desc="基于同地点 · 同时段 · 同任务的轻协作。不需要先加好友也能加入正在发生的校园挑战。"
+                  bullets={['宿舍楼 / 学院协作', '临时组队', '地图偶遇互动']}
+                  span={2}
+                />
+              </div>
+            </div>
+          </section>
+
+          {/* PREVIEW / DEMO ENTRIES */}
+          <section id="preview" style={{padding:'80px 32px', background: T.bg}}>
+            <div style={{maxWidth: 1280, margin:'0 auto'}}>
+              <div className="mono" style={{fontSize: 11, color: T.coral, letterSpacing:'0.16em', fontWeight: 700, marginBottom: 12}}>
+                — TRY IT NOW
+              </div>
+              <h2 className="display" style={{fontSize: 38, fontWeight: 600, color: T.ink, letterSpacing:'-0.02em', margin:'0 0 12px', maxWidth: 720, lineHeight: 1.1}}>
+                两个端入口 · 同一套核心闭环
+              </h2>
+              <p style={{fontSize: 15, color: T.muted, lineHeight: 1.6, marginTop: 0, marginBottom: 36, maxWidth: 640}}>
+                选择你想体验的形态。两个版本任务 · 徽章 · 赛季完全联动，任务完成后徽章实时变化。
+              </p>
+
+              <div className="modules-grid" style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap: 18}}>
+                <DemoCard
+                  kind="app"
+                  title="App 端 Demo"
+                  subtitle="iPhone-frame · 移动手势 · 完整核心交互"
+                  bullets={[
+                    '4 个底部 tab · 拇指可达',
+                    '可拖动 / 缩放的校园地图',
+                    'Bottom sheet 任务详情',
+                    '推荐试玩引导卡',
+                  ]}
+                  cta="进入 App 端"
+                  onClick={onPickApp}
+                  bg={T.brownDeep}
+                  fg="#FFF"
+                  accent={T.lime}
+                />
+                <DemoCard
+                  kind="web"
+                  title="网页端 Demo"
+                  subtitle="Sidebar 导航 · 多列布局 · 桌面工作流"
+                  bullets={[
+                    '左侧 sidebar · 顶部活力值',
+                    '4 列徽章网格 · 时间线',
+                    '常驻地图任务 detail panel',
+                    '响应式 1024 → 1920',
+                  ]}
+                  cta="进入网页端"
+                  onClick={onPickWeb}
+                  bg={T.surface}
+                  fg={T.ink}
+                  accent={T.coral}
+                  border={T.line}
+                />
+              </div>
+            </div>
+          </section>
+
+          {/* DIFFERENTIATION */}
+          <section id="about" style={{padding:'56px 32px 80px', background: T.bg}}>
+            <div style={{maxWidth: 1080, margin:'0 auto'}}>
+              <div className="mono" style={{fontSize: 11, color: T.coral, letterSpacing:'0.16em', fontWeight: 700, marginBottom: 12}}>
+                — DIFFERENTIATION
+              </div>
+              <h2 className="display" style={{fontSize: 32, fontWeight: 600, color: T.ink, letterSpacing:'-0.02em', margin:'0 0 28px'}}>
+                和已有产品的差别
+              </h2>
+              <div style={{display:'flex', flexDirection:'column', gap: 12}}>
+                {[
+                  { a:'传统运动 App', b:'强调记录和结果', c:'本产品强调校园场景中的持续参与体验' },
+                  { a:'普通 LBS 打卡', b:'地点签到工具', c:'地点触发任务 · 运动行为决定完成的行为系统' },
+                  { a:'强社交玩法', b:'依赖强关系监督', c:'通过轻协作 · 临时组队 · 偶遇建立低压力共玩感' },
+                  { a:'一般游戏化', b:'通用积分体系', c:'以「学期赛季」为节奏，与大学生活周期深度一致' },
+                ].map((row, i) => (
+                  <div key={i} style={{
+                    display:'grid', gridTemplateColumns:'140px 1fr 1.6fr', gap: 16, alignItems:'center',
+                    background: T.surface, padding:'14px 18px', borderRadius: 14,
+                    border:`1px solid ${T.line}`,
+                  }}>
+                    <div className="display" style={{fontSize: 14, fontWeight: 600, color: T.muted}}>vs {row.a}</div>
+                    <div style={{fontSize: 13, color: T.ink2, textDecoration:'line-through', textDecorationColor: T.subtle}}>
+                      {row.b}
+                    </div>
+                    <div style={{fontSize: 13.5, color: T.ink, fontWeight: 500, display:'flex', alignItems:'center', gap: 6}}>
+                      <Ic.Spark s={11} c={T.limeDeep}/>{row.c}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          {/* FOOTER */}
+          <footer style={{
+            padding:'28px 32px',
+            background: T.brownDeep, color:'rgba(255,255,255,0.7)',
+            display:'flex', alignItems:'center', justifyContent:'space-between',
+            flexWrap:'wrap', gap: 12,
+          }}>
+            <div style={{display:'flex', alignItems:'center', gap: 12}}>
+              <div style={{
+                width: 32, height: 32, borderRadius: 9,
+                background: T.lime, color: T.brownDeep,
+                display:'grid', placeItems:'center',
+                fontFamily:'"Space Grotesk"', fontWeight: 700, fontSize: 13,
+              }}>CQ</div>
+              <span style={{fontSize: 12, color:'rgba(255,255,255,0.55)'}}>
+                Campus Quest · Hi-Fi Prototype · 2026 Spring
+              </span>
+            </div>
+            <div className="mono" style={{fontSize: 10.5, color:'rgba(255,255,255,0.4)', letterSpacing:'0.08em'}}>
+              本原型用于产品评审展示 · 部分能力以 Preview 形式呈现
+            </div>
+          </footer>
+        </div>
+      );
+    }
+
+    /* HERO VISUAL — abstract phone + map peek */
+    function HeroVisual({onPickApp, onPickWeb}) {
+      return (
+        <div style={{position:'relative', width:'100%', height: 480}}>
+          {/* big background glow */}
+          <div style={{
+            position:'absolute', inset: 0,
+            background:'radial-gradient(circle at 70% 40%, rgba(255,106,61,0.18) 0%, transparent 55%)',
+          }}/>
+
+          {/* Mock phone preview */}
+          <button onClick={onPickApp} className="cq-card" style={{
+            position:'absolute', left: 28, top: 30,
+            width: 220, height: 440,
+            background: T.brownDeep, borderRadius: 32,
+            padding: 8, boxShadow:'0 30px 60px rgba(20,18,12,0.30)',
+            border:'1px solid #2a2820', cursor:'pointer',
+          }}>
+            <div style={{
+              width:'100%', height:'100%', borderRadius: 26,
+              background: T.bg, overflow:'hidden', position:'relative',
+              textAlign:'left',
+            }}>
+              {/* notch */}
+              <div style={{position:'absolute', top: 8, left:'50%', transform:'translateX(-50%)', width: 70, height: 18, background:'#0F0E0A', borderRadius: 12, zIndex:2}}/>
+              {/* status */}
+              <div style={{padding:'30px 16px 8px', display:'flex', justifyContent:'space-between'}}>
+                <span style={{fontSize: 9, fontWeight: 600, color: T.ink}} className="display">9:41</span>
+                <span className="mono" style={{fontSize: 8, color: T.muted}}>S04</span>
+              </div>
+              {/* Hero card */}
+              <div style={{margin:'4px 12px 8px', background: T.brownDeep, color:'#FFF', borderRadius: 14, padding: 12, position:'relative', overflow:'hidden'}}>
+                <div style={{position:'absolute', top:-20, right:-20, width: 80, height: 80, borderRadius: 99, background:'radial-gradient(circle, rgba(201,242,62,0.22) 0%, transparent 60%)'}}/>
+                <div className="mono" style={{fontSize: 7, color: T.lime, letterSpacing:'0.10em', fontWeight: 700}}>SEASON · S04</div>
+                <div className="display" style={{fontSize: 11, fontWeight: 600, marginTop: 2}}>湖畔之春</div>
+                <div style={{display:'flex', alignItems:'baseline', gap: 4, marginTop: 6}}>
+                  <span className="display" style={{fontSize: 18, fontWeight: 700, color: T.lime, letterSpacing:'-0.04em'}}>325</span>
+                  <span className="mono" style={{fontSize: 7, color:'rgba(255,255,255,0.5)'}}>VITALITY</span>
+                </div>
+                <div style={{height: 3, borderRadius: 99, background:'rgba(255,255,255,0.10)', marginTop: 8, overflow:'hidden'}}>
+                  <div style={{width:'68%', height:'100%', background:`linear-gradient(90deg, ${T.lime}, #E0FF7A)`}}/>
+                </div>
+              </div>
+              {/* Task list rows */}
+              {[
+                { t:'黄昏湖畔环线', tag:'探索', c:'#5B8DF6', bg:'#E2ECFC', done: true },
+                { t:'10 分钟拉伸恢复', tag:'恢复', c:'#7FA01F', bg:'#E5EFD7' },
+                { t:'Libe Slope 上下三趟', tag:'训练', c:'#FF6A3D', bg:'#FFE7DD' },
+              ].map((r, i) => (
+                <div key={i} style={{
+                  margin:'0 12px 6px',
+                  background: T.surface, border:`1px solid ${T.line}`,
+                  borderRadius: 11, padding:'8px 10px',
+                  display:'flex', alignItems:'center', gap: 8,
+                  opacity: r.done ? 0.7 : 1,
+                }}>
+                  <div style={{width: 24, height: 24, borderRadius: 7, background: r.bg, display:'grid', placeItems:'center'}}>
+                    {r.tag === '探索' ? <Ic.Walk s={12} c={r.c}/> :
+                     r.tag === '恢复' ? <Ic.Stretch s={12} c={r.c}/> : <Ic.Run s={12} c={r.c}/>}
+                  </div>
+                  <div style={{flex: 1, minWidth: 0}}>
+                    <div style={{fontSize: 8, color: T.muted}}>{r.tag}</div>
+                    <div className="display" style={{fontSize: 10, fontWeight: 600, color: T.ink, textDecoration: r.done ? 'line-through' : 'none', textDecorationColor: T.subtle}}>{r.t}</div>
+                  </div>
+                  {r.done && <div style={{width: 14, height: 14, borderRadius: 99, background:'#E5EFD7', display:'grid', placeItems:'center'}}>
+                    <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#3F5E1F" strokeWidth="3" strokeLinecap="round"><path d="M5 12l5 5 9-11"/></svg>
+                  </div>}
+                </div>
+              ))}
+              {/* tab bar */}
+              <div style={{
+                position:'absolute', bottom: 8, left: 8, right: 8,
+                background: T.surface, border:`1px solid ${T.line}`,
+                borderRadius: 14, padding:'5px 4px',
+                display:'flex', justifyContent:'space-around',
+              }}>
+                {['首页','地图','共玩','徽章'].map((l, i) => (
+                  <div key={i} style={{
+                    fontSize: 8, color: i === 0 ? T.brownDeep : T.subtle, fontWeight: i === 0 ? 700 : 500,
+                    padding:'4px 6px', borderRadius: 6,
+                    background: i === 0 ? T.lime : 'transparent',
+                  }}>{l}</div>
+                ))}
+              </div>
+            </div>
+          </button>
+
+          {/* Floating map card */}
+          <button onClick={onPickWeb} className="cq-card" style={{
+            position:'absolute', right: 0, top: 50,
+            width: 320, background: T.surface,
+            border:`1px solid ${T.line}`, borderRadius: 18,
+            padding: 16, textAlign:'left',
+            boxShadow:'0 20px 50px rgba(20,18,12,0.14)',
+            animation:'cq-float 4s ease-in-out infinite',
+          }}>
+            <div style={{display:'flex', alignItems:'center', gap: 6, marginBottom: 10}}>
+              <span style={{width: 6, height: 6, borderRadius: 99, background: T.coral, animation:'cq-pulse 1.6s ease-in-out infinite'}}/>
+              <span className="mono" style={{fontSize: 10, color: T.muted, letterSpacing:'0.10em'}}>LIVE · CORNELL</span>
+            </div>
+            <div className="display" style={{fontSize: 14, fontWeight: 600, color: T.ink}}>校园地图 · 14/22 已点亮</div>
+            <svg viewBox="0 0 280 130" style={{width:'100%', height: 110, marginTop: 10, borderRadius: 10, background:'#EFE7CF'}}>
+              <path d="M 80,40 Q 110,18 170,22 Q 230,30 250,55 Q 256,80 220,90 Q 150,98 110,84 Q 70,70 80,40 Z" fill="#9DC8DC" opacity="0.92"/>
+              <text x="165" y="58" textAnchor="middle" style={{fontFamily:'"Space Grotesk"', fontSize: 8, fontWeight: 600, fill:'#3D6478', letterSpacing:'0.08em'}}>BEEBE LAKE</text>
+              <path d="M 30,90 Q 90,80 140,95 Q 200,108 250,98" fill="none" stroke="#DCD3B8" strokeWidth="1" strokeDasharray="3 4"/>
+              <circle cx="165" cy="55" r="7" fill={T.lime} stroke={T.brownDeep} strokeWidth="1.6"/>
+              <circle cx="100" cy="92" r="6" fill="#FFF" stroke={T.brownDeep} strokeWidth="1.6"/>
+              <circle cx="220" cy="78" r="6" fill="#FFF" stroke={T.brownDeep} strokeWidth="1.6"/>
+              <circle cx="60" cy="105" r="6" fill="#FFF" stroke={T.brownDeep} strokeWidth="1.6"/>
+              <circle cx="235" cy="105" r="6" fill="#FFF" stroke={T.brownDeep} strokeWidth="1.6"/>
+            </svg>
+            <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginTop: 10}}>
+              <span style={{fontSize: 11, color: T.muted}}>5 个校园点位</span>
+              <span style={{fontSize: 11, color: T.ink, fontWeight: 600, display:'flex', alignItems:'center', gap: 4}}>
+                进入网页端 <Ic.ArrowR s={11} c={T.ink}/>
+              </span>
+            </div>
+          </button>
+
+          {/* Floating badge card */}
+          <div className="cq-card" style={{
+            position:'absolute', right: 60, bottom: 40,
+            background: T.lime, borderRadius: 16,
+            padding: 14, width: 220,
+            border:`1px solid ${T.brownDeep}`,
+            boxShadow:'0 12px 30px rgba(127,160,31,0.45)',
+            animation:'cq-float 4.5s ease-in-out infinite reverse',
+          }}>
+            <div style={{display:'flex', alignItems:'center', gap: 10}}>
+              <div style={{
+                width: 36, height: 36, borderRadius: 10,
+                background: T.brownDeep, display:'grid', placeItems:'center',
+              }}>
+                <Ic.Trophy s={18} c={T.lime}/>
+              </div>
+              <div>
+                <div className="mono" style={{fontSize: 9, color: T.brownDeep, letterSpacing:'0.10em', fontWeight: 700}}>+ JUST UNLOCKED</div>
+                <div className="display" style={{fontSize: 13, fontWeight: 600, color: T.brownDeep, marginTop: 2}}>湖畔学徒 · TIER 3</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Floating quick-stats */}
+          <div className="cq-card" style={{
+            position:'absolute', left: 0, bottom: 30,
+            background: T.surface, borderRadius: 14,
+            padding:'10px 14px',
+            border:`1px solid ${T.line}`,
+            boxShadow:'0 10px 24px rgba(20,18,12,0.10)',
+            display:'flex', alignItems:'center', gap: 10,
+          }}>
+            <Ic.Flame s={16} c={T.coral}/>
+            <div>
+              <div style={{fontSize: 10, color: T.muted}}>连续</div>
+              <div className="mono display" style={{fontSize: 18, fontWeight: 700, color: T.ink, letterSpacing:'-0.02em'}}>14<span style={{fontSize: 11, color: T.muted, fontWeight: 400}}> 天</span></div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    /* MODULE CARD */
+    function ModuleCard({num, title, desc, bullets, tone, fg, Icon, span}) {
+      return (
+        <div className="cq-card" style={{
+          gridColumn: span === 2 ? 'span 2' : 'auto',
+          background: tone, color: fg,
+          borderRadius: 22, padding: 24,
+          position:'relative', overflow:'hidden',
+          minHeight: 220,
+          display:'flex', flexDirection:'column',
+        }}>
+          <div style={{
+            position:'absolute', right: -40, top: -40,
+            width: 180, height: 180, borderRadius: 99,
+            background:`radial-gradient(circle, ${fg === '#FFF' ? 'rgba(255,255,255,0.10)' : 'rgba(20,18,12,0.06)'} 0%, transparent 60%)`,
+          }}/>
+          <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom: 14, position:'relative'}}>
+            <span className="mono" style={{fontSize: 11, opacity: 0.6, letterSpacing:'0.10em', fontWeight: 700}}>{num}</span>
+            <Icon s={22} c={fg}/>
+          </div>
+          <div className="display" style={{fontSize: 22, fontWeight: 600, letterSpacing:'-0.01em', position:'relative'}}>
+            {title}
+          </div>
+          <div style={{fontSize: 13, opacity: 0.72, lineHeight: 1.55, marginTop: 6, position:'relative', flex: 1}}>
+            {desc}
+          </div>
+          <div style={{display:'flex', flexWrap:'wrap', gap: 6, marginTop: 14, position:'relative'}}>
+            {bullets.map((b, i) => (
+              <span key={i} style={{
+                fontSize: 11, padding:'4px 10px', borderRadius: 999,
+                background: fg === '#FFF' ? 'rgba(255,255,255,0.10)' : 'rgba(20,18,12,0.08)',
+                color: fg, fontWeight: 500,
+              }}>{b}</span>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    /* DEMO CARD */
+    function DemoCard({kind, title, subtitle, bullets, cta, onClick, bg, fg, accent, border}) {
+      return (
+        <button onClick={onClick} className="cq-card" style={{
+          background: bg, color: fg,
+          border: border ? `1px solid ${border}` : 'none',
+          borderRadius: 22, padding: 28,
+          textAlign:'left', display:'flex', flexDirection:'column', gap: 18,
+          minHeight: 320, position:'relative', overflow:'hidden',
+        }}>
+          <div style={{position:'absolute', right: -40, top: -40, width: 220, height: 220, borderRadius: 99,
+            background: `radial-gradient(circle, ${accent}33 0%, transparent 60%)`}}/>
+          <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', position:'relative'}}>
+            <div style={{
+              width: 52, height: 52, borderRadius: 14,
+              background: kind === 'app' ? 'rgba(255,255,255,0.08)' : T.cardAlt,
+              border: kind === 'app' ? '1px solid rgba(255,255,255,0.12)' : 'none',
+              display:'grid', placeItems:'center',
+            }}>
+              {kind === 'app' ? <Ic.Phone s={26} c={accent}/> : <Ic.Desktop s={26} c={accent}/>}
+            </div>
+            <span className="mono" style={{
+              fontSize: 10, letterSpacing:'0.12em', fontWeight: 700,
+              color: kind === 'app' ? 'rgba(255,255,255,0.45)' : T.muted,
+            }}>{kind === 'app' ? 'MOBILE · iOS FRAME' : 'DESKTOP · WEB'}</span>
+          </div>
+          <div style={{position:'relative'}}>
+            <div className="display" style={{fontSize: 28, fontWeight: 600, letterSpacing:'-0.01em'}}>{title}</div>
+            <div style={{fontSize: 13.5, opacity: 0.7, marginTop: 6}}>{subtitle}</div>
+          </div>
+          <ul style={{margin: 0, padding: 0, listStyle:'none', display:'flex', flexDirection:'column', gap: 6, position:'relative', flex: 1}}>
+            {bullets.map((b, i) => (
+              <li key={i} style={{display:'flex', alignItems:'center', gap: 8, fontSize: 13, opacity: 0.85}}>
+                <span style={{width: 4, height: 4, borderRadius: 99, background: accent, flex:'0 0 auto'}}/>
+                {b}
+              </li>
+            ))}
+          </ul>
+          <div className="cta-pri" style={{
+            display:'inline-flex', alignItems:'center', gap: 6, alignSelf:'flex-start',
+            padding:'12px 20px', borderRadius: 12,
+            background: kind === 'app' ? accent : T.brownDeep,
+            color: kind === 'app' ? T.brownDeep : '#FFF',
+            fontSize: 14, fontWeight: 600,
+            position:'relative',
+          }}>
+            {cta} <Ic.ArrowR s={14} c={kind === 'app' ? T.brownDeep : '#FFF'}/>
+          </div>
+        </button>
+      );
+    }
+
+    function LoginModal({open, onClose, onSubmit, demoUser, sessionUser, profile, progress, onLogout}) {
+      const [name, setName] = useState(demoUser?.name || profile?.name || '毛柯兰');
+      const [email, setEmail] = useState(demoUser?.email || sessionUser?.email || profile?.email || 'kelan@cornell.edu');
+      const [status, setStatus] = useState('idle');
+      const [message, setMessage] = useState('');
+      const isLoggedIn = !!sessionUser;
+
+      useEffect(() => {
+        if (!open) return;
+        setStatus('idle');
+        setMessage('');
+        setName(demoUser?.name || profile?.name || sessionUser?.user_metadata?.name || '毛柯兰');
+        setEmail(demoUser?.email || sessionUser?.email || profile?.email || 'kelan@cornell.edu');
+      }, [open, demoUser, sessionUser, profile]);
+
+      if (!open) return null;
+
+      async function handlePrimaryAction() {
+        if (!HAS_REAL_AUTH) {
+          onSubmit({ name: name.trim() || '毛柯兰', email: email.trim() || 'kelan@cornell.edu' });
+          return;
+        }
+
+        setStatus('submitting');
+        setMessage('');
+        const redirectTo = `${window.location.origin}${window.location.pathname}`;
+        const { error } = await sb.auth.signInWithOtp({
+          email: email.trim(),
+          options: {
+            emailRedirectTo: redirectTo,
+            data: { name: name.trim() || '毛柯兰' },
+          },
+        });
+
+        if (error) {
+          setStatus('error');
+          setMessage(error.message || 'Magic Link 发送失败，请稍后重试。');
+          return;
+        }
+
+        setStatus('success');
+        setMessage('Magic Link 已发送，请前往邮箱完成登录。');
+      }
+
+      async function handleLogout() {
+        if (HAS_REAL_AUTH && sb) await sb.auth.signOut();
+        onLogout?.();
+        setStatus('idle');
+        setMessage('');
+        onClose();
+      }
+
+      return (
+        <div onClick={onClose} style={{
+          position:'fixed', inset: 0, zIndex: 200,
+          background:'rgba(15,14,10,0.52)',
+          display:'flex', alignItems:'center', justifyContent:'center',
+          padding: 24,
+        }}>
+          <div onClick={(e) => e.stopPropagation()} style={{
+            width:'100%', maxWidth: 460,
+            background: T.surface, border:`1px solid ${T.line}`,
+            borderRadius: 24, padding: 24,
+            boxShadow:'0 24px 60px rgba(20,18,12,0.18)',
+          }}>
+            <div style={{display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap: 16}}>
+              <div>
+                <div className="display" style={{fontSize: 28, fontWeight: 700, color: T.ink}}>Demo Login</div>
+                <div style={{fontSize: 13.5, color: T.muted, marginTop: 6, lineHeight: 1.55}}>
+                  这是这份展示页自己的账号入口。
+                  页面设计不变，只把真实登录和用户数据接进来。
+                </div>
+              </div>
+              <button onClick={onClose} style={{
+                width: 34, height: 34, borderRadius: 10,
+                border:`1px solid ${T.line}`, background:T.bg,
+                fontSize: 18, color: T.ink2,
+              }}>×</button>
+            </div>
+
+            <div style={{display:'grid', gap: 14, marginTop: 22}}>
+              <label style={{display:'grid', gap: 8}}>
+                <span style={{fontSize: 12, fontWeight: 600, color: T.ink2}}>姓名</span>
+                <input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  style={{
+                    width:'100%', padding:'14px 14px',
+                    borderRadius: 14, border:`1px solid ${T.line}`,
+                    background:'#FFF', color:T.ink, fontSize: 14, outline:'none',
+                  }}
+                />
+              </label>
+              <label style={{display:'grid', gap: 8}}>
+                <span style={{fontSize: 12, fontWeight: 600, color: T.ink2}}>Cornell 邮箱</span>
+                <input
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  style={{
+                    width:'100%', padding:'14px 14px',
+                    borderRadius: 14, border:`1px solid ${T.line}`,
+                    background:'#FFF', color:T.ink, fontSize: 14, outline:'none',
+                  }}
+                />
+              </label>
+            </div>
+
+            <div style={{
+              marginTop: 18, padding:'12px 14px',
+              borderRadius: 14, background:T.cardAlt,
+              fontSize: 12.5, color: T.ink2, lineHeight: 1.55,
+            }}>
+              {HAS_REAL_AUTH
+                ? '当前页面已接入 Supabase Auth。在线上链接或本地 http 预览下，这里会发送真实 Magic Link，并读取用户档案与进度。'
+                : '当前是 file:// 本地预览模式。为了不破坏这份展示页，file 打开时保留本地 demo 登录；放到线上或本地 http 地址后会自动切到真实登录。'}
+            </div>
+
+            {isLoggedIn && profile ? (
+              <div style={{
+                marginTop: 12, padding:'12px 14px',
+                borderRadius: 14, border:`1px solid ${T.line}`,
+                background:'#FFF',
+                fontSize: 12.5, color: T.ink2, lineHeight: 1.65,
+              }}>
+                <div style={{fontWeight: 700, color: T.ink, marginBottom: 4}}>{profile.name} · 已登录</div>
+                <div>{profile.email}</div>
+                {progress ? <div>活力值 {progress.vitality} · 点亮区域 {progress.season_lit} · 连续活跃 {progress.streak_days} 天</div> : null}
+              </div>
+            ) : null}
+
+            {message ? (
+              <div style={{
+                marginTop: 12, padding:'12px 14px',
+                borderRadius: 14,
+                background: status === 'error' ? 'rgba(255,106,61,0.12)' : 'rgba(201,242,62,0.18)',
+                fontSize: 12.5, color: T.ink2, lineHeight: 1.55,
+              }}>
+                {message}
+              </div>
+            ) : null}
+
+            <div style={{display:'flex', gap: 10, justifyContent:'flex-end', marginTop: 20}}>
+              {isLoggedIn ? (
+                <button onClick={handleLogout} className="cta-sec" style={{
+                  background:T.bg, border:`1px solid ${T.line}`,
+                  padding:'12px 16px', borderRadius: 12,
+                  fontSize: 14, fontWeight: 600, color:T.ink,
+                }}>退出登录</button>
+              ) : null}
+              <button onClick={onClose} className="cta-sec" style={{
+                background:T.bg, border:`1px solid ${T.line}`,
+                padding:'12px 16px', borderRadius: 12,
+                fontSize: 14, fontWeight: 600, color:T.ink,
+              }}>先不登录</button>
+              <button onClick={handlePrimaryAction} className="cta-pri" style={{
+                background:T.brownDeep, color:'#FFF',
+                padding:'12px 18px', borderRadius: 12,
+                fontSize: 14, fontWeight: 600,
+              }}>{HAS_REAL_AUTH ? (status === 'submitting' ? '发送中...' : '发送 Magic Link') : '进入 Demo'}</button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    /* DEMO HOST — wraps iframe with top nav */
+    function DemoHost({src, mode, onBack, onOpenLogin, demoUser}) {
+      const isApp = mode === 'app';
+      return (
+        <Fragment>
+          <header className={'topnav ' + (isApp ? 'topnav-app' : '')}>
+            <button onClick={onBack} style={{
+              display:'flex', alignItems:'center', gap: 6,
+              padding:'7px 12px', borderRadius: 10,
+              background: isApp ? 'rgba(255,255,255,0.10)' : T.surface,
+              color: isApp ? '#FFF' : T.ink,
+              border: `1px solid ${isApp ? 'rgba(255,255,255,0.14)' : T.line}`,
+              fontSize: 13, fontWeight: 500,
+            }}>
+              <Ic.ArrowL s={14} c={isApp ? '#FFF' : T.ink}/> 返回首页
+            </button>
+            <div style={{display:'flex', alignItems:'center', gap: 8}}>
+              <div style={{
+                width: 28, height: 28, borderRadius: 8,
+                background: isApp ? T.lime : T.brownDeep,
+                color: isApp ? T.brownDeep : T.lime,
+                display:'grid', placeItems:'center',
+                fontFamily:'"Space Grotesk"', fontWeight: 700, fontSize: 12, letterSpacing:'-0.04em',
+              }}>CQ</div>
+              <span className="display" style={{fontSize: 14, fontWeight: 600, color: isApp ? '#FFF' : T.ink}}>
+                Campus Quest · {isApp ? 'App 端' : '网页端'}
+              </span>
+              <span className="mono" style={{
+                fontSize: 10, color: isApp ? 'rgba(255,255,255,0.45)' : T.muted,
+                letterSpacing:'0.10em', marginLeft: 4,
+              }}>S04 · LAKESIDE SPRING</span>
+            </div>
+          </header>
+          <div style={{
+            position: 'fixed', inset: 0, paddingTop: 60,
+            zIndex: 1, overflow: 'hidden',
+          }}>
+            <iframe src={src} title={isApp ? 'App Demo' : 'Web Demo'}
+              style={{
+                width:'100%', height:'100%', border: 0,
+                background: isApp ? '#0F0E0A' : T.bg,
+                display:'block',
+              }}/>
+          </div>
+        </Fragment>
+      );
+    }
+
+    const Fragment = React.Fragment;
+
+    /* ROOT */
+    function App() {
+      // mode: 'home' | 'app' | 'web'
+      const [mode, setMode] = useState(() => {
+        const h = window.location.hash.replace('#','');
+        if (h === 'app' || h === 'web') return h;
+        return 'home';
+      });
+      const [loginOpen, setLoginOpen] = useState(false);
+      const [demoUser, setDemoUser] = useState(() => {
+        try {
+          const raw = window.localStorage.getItem('cq-demo-user');
+          return raw ? JSON.parse(raw) : null;
+        } catch {
+          return null;
+        }
+      });
+      const [sessionUser, setSessionUser] = useState(null);
+      const [profile, setProfile] = useState(null);
+      const [progress, setProgress] = useState(null);
+
+      async function loadUserState(user) {
+        if (!HAS_REAL_AUTH || !sb || !user) {
+          setProfile(null);
+          setProgress(null);
+          return;
+        }
+
+        const [{ data: profileRow }, { data: progressRow }] = await Promise.all([
+          sb.from('profiles').select('*').eq('id', user.id).maybeSingle(),
+          sb.from('user_progress').select('*').eq('user_id', user.id).maybeSingle(),
+        ]);
+
+        setProfile(profileRow || null);
+        setProgress(progressRow || null);
+      }
+
+      useEffect(() => {
+        if (mode === 'home') window.location.hash = '';
+        else window.location.hash = '#' + mode;
+        window.scrollTo(0, 0);
+      }, [mode]);
+
+      useEffect(() => {
+        const onHash = () => {
+          const h = window.location.hash.replace('#','');
+          setMode((h === 'app' || h === 'web') ? h : 'home');
+        };
+        window.addEventListener('hashchange', onHash);
+        return () => window.removeEventListener('hashchange', onHash);
+      }, []);
+
+      useEffect(() => {
+        try {
+          if (demoUser) window.localStorage.setItem('cq-demo-user', JSON.stringify(demoUser));
+          else window.localStorage.removeItem('cq-demo-user');
+        } catch {}
+      }, [demoUser]);
+
+      useEffect(() => {
+        if (!HAS_REAL_AUTH || !sb) return undefined;
+
+        sb.auth.getUser().then(async ({ data }) => {
+          const user = data?.user || null;
+          setSessionUser(user);
+          if (user) await loadUserState(user);
+        });
+
+        const { data } = sb.auth.onAuthStateChange(async (_event, session) => {
+          const user = session?.user || null;
+          setSessionUser(user);
+          if (user) {
+            await loadUserState(user);
+          } else {
+            setProfile(null);
+            setProgress(null);
+          }
+        });
+
+        return () => data.subscription.unsubscribe();
+      }, []);
+
+      function handleDemoSubmit(user) {
+        setDemoUser(user);
+        setLoginOpen(false);
+      }
+
+      function handleLogout() {
+        setDemoUser(null);
+        setSessionUser(null);
+        setProfile(null);
+        setProgress(null);
+      }
+
+      const viewer = profile
+        ? { name: profile.name, email: profile.email }
+        : sessionUser
+          ? { name: sessionUser.user_metadata?.name || sessionUser.email, email: sessionUser.email }
+          : demoUser;
+
+      if (mode === 'app') {
+        const appDemoSrc = "Campus%20Quest.html";
+        return (
+          <Fragment>
+            <DemoHost
+              src={appDemoSrc}
+              mode="app"
+              demoUser={viewer}
+              onOpenLogin={() => setLoginOpen(true)}
+              onBack={() => setMode('home')}
+            />
+            <LoginModal
+              open={loginOpen}
+              demoUser={demoUser}
+              sessionUser={sessionUser}
+              profile={profile}
+              progress={progress}
+              onClose={() => setLoginOpen(false)}
+              onSubmit={handleDemoSubmit}
+              onLogout={handleLogout}
+            />
+          </Fragment>
+        );
+      }
+      if (mode === 'web') {
+        return (
+          <Fragment>
+            <DemoHost
+              src="Campus%20Quest%20Web.html"
+              mode="web"
+              demoUser={viewer}
+              onOpenLogin={() => setLoginOpen(true)}
+              onBack={() => setMode('home')}
+            />
+            <LoginModal
+              open={loginOpen}
+              demoUser={demoUser}
+              sessionUser={sessionUser}
+              profile={profile}
+              progress={progress}
+              onClose={() => setLoginOpen(false)}
+              onSubmit={handleDemoSubmit}
+              onLogout={handleLogout}
+            />
+          </Fragment>
+        );
+      }
+      return (
+        <Fragment>
+          <Landing
+            demoUser={viewer}
+            onOpenLogin={() => setLoginOpen(true)}
+            onPickApp={() => setMode('app')}
+            onPickWeb={() => setMode('web')}
+          />
+          <LoginModal
+            open={loginOpen}
+            demoUser={demoUser}
+            sessionUser={sessionUser}
+            profile={profile}
+            progress={progress}
+            onClose={() => setLoginOpen(false)}
+            onSubmit={handleDemoSubmit}
+            onLogout={handleLogout}
+          />
+        </Fragment>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('app'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
