@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Campus Quest · MVP Launcher</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; min-height: 100%; }
+    body {
+      font-family: "Inter", "Noto Sans SC", system-ui, sans-serif;
+      background:
+        radial-gradient(1200px 600px at 80% -10%, rgba(201,242,62,0.18), transparent 45%),
+        radial-gradient(900px 500px at -10% 10%, rgba(255,106,61,0.12), transparent 40%),
+        #F1ECDF;
+      color: #15140F;
+      -webkit-font-smoothing: antialiased;
+    }
+    .display { font-family: "Space Grotesk", "Noto Sans SC", sans-serif; letter-spacing: -0.03em; }
+    .mono { font-family: "JetBrains Mono", monospace; letter-spacing: 0.08em; }
+    a { color: inherit; text-decoration: none; }
+    .page {
+      min-height: 100vh;
+      padding: 36px 20px 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .shell {
+      width: min(1120px, 100%);
+      display: grid;
+      grid-template-columns: 1.08fr 0.92fr;
+      gap: 22px;
+    }
+    .panel, .card {
+      border: 1px solid #DCD3B8;
+      border-radius: 28px;
+      background: rgba(255,253,247,0.88);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 18px 40px rgba(20,18,12,0.08);
+    }
+    .panel {
+      padding: 28px;
+    }
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 22px;
+    }
+    .mark {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      background: #15140F;
+      color: #C9F23E;
+      font-weight: 700;
+    }
+    .eyebrow {
+      font-size: 11px;
+      color: #736B57;
+      margin-bottom: 14px;
+      text-transform: uppercase;
+    }
+    h1 {
+      margin: 0 0 16px;
+      font-size: clamp(42px, 7vw, 72px);
+      line-height: 0.98;
+    }
+    p.lead {
+      margin: 0;
+      font-size: 16px;
+      line-height: 1.7;
+      color: #3A382E;
+      max-width: 620px;
+    }
+    .meta {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 22px;
+    }
+    .pill {
+      padding: 9px 12px;
+      border-radius: 999px;
+      background: rgba(20,18,12,0.06);
+      color: #3A382E;
+      font-size: 12px;
+    }
+    .grid {
+      display: grid;
+      gap: 16px;
+    }
+    .card {
+      padding: 22px;
+      transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+    }
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 22px 44px rgba(20,18,12,0.12);
+      border-color: #15140F;
+    }
+    .card.dark {
+      background: #15140F;
+      color: #FFF;
+      border-color: rgba(255,255,255,0.08);
+    }
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(20,18,12,0.06);
+      font-size: 11px;
+      color: #736B57;
+      margin-bottom: 14px;
+    }
+    .dark .tag {
+      background: rgba(255,255,255,0.10);
+      color: rgba(255,255,255,0.70);
+    }
+    h2 {
+      margin: 0 0 8px;
+      font-size: 26px;
+    }
+    .desc {
+      font-size: 14px;
+      line-height: 1.65;
+      color: #3A382E;
+      margin-bottom: 18px;
+    }
+    .dark .desc {
+      color: rgba(255,255,255,0.76);
+    }
+    ul {
+      margin: 0 0 18px;
+      padding-left: 18px;
+      color: #736B57;
+      line-height: 1.8;
+      font-size: 13px;
+    }
+    .dark ul {
+      color: rgba(255,255,255,0.66);
+    }
+    .cta {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 154px;
+      padding: 12px 16px;
+      border-radius: 14px;
+      font-weight: 600;
+      background: #15140F;
+      color: #FFF;
+    }
+    .dark .cta {
+      background: #C9F23E;
+      color: #15140F;
+    }
+    .mini {
+      margin-top: 18px;
+      padding: 14px 16px;
+      border-radius: 18px;
+      background: #ECE3C8;
+      font-size: 13px;
+      color: #3A382E;
+      line-height: 1.65;
+    }
+    code {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 12px;
+      background: rgba(20,18,12,0.06);
+      border-radius: 6px;
+      padding: 2px 6px;
+    }
+    @media (max-width: 960px) {
+      .shell { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="shell">
+      <section class="panel">
+        <div class="brand">
+          <div class="mark display">CQ</div>
+          <div>
+            <div class="display" style="font-size: 18px; font-weight: 700;">Campus Quest</div>
+            <div class="mono" style="font-size: 11px; color: #736B57;">S04 · Lakeside Spring · Cornell</div>
+          </div>
+        </div>
+        <div class="eyebrow mono">Launcher</div>
+        <h1 class="display">把原型、网页端和<br/>MVP 入口都放在一起。</h1>
+        <p class="lead">
+          这是一个可直接用 <code>file://</code> 打开的启动页。它不会再依赖 Vite 入口壳，所以不会出现空白页。
+          你可以从这里打开原版 Home page、App 端、网页端，以及正在本地运行的真实 MVP。
+        </p>
+        <div class="meta">
+          <span class="pill">原版 Home page 已恢复</span>
+          <span class="pill">App / Web Demo 保持不变</span>
+          <span class="pill">MVP 本地地址：127.0.0.1:4174</span>
+        </div>
+        <div class="mini">
+          如果你只是要看原来那版展示页，直接打开：
+          <br/>
+          <code>file:///Users/clairemao/Documents/Cornell/Campus%20Quest/index.html</code>
+        </div>
+      </section>
+
+      <section class="grid">
+        <a class="card" href="./index.html">
+          <div class="tag mono">Original Home</div>
+          <h2 class="display">原版 Home page</h2>
+          <div class="desc">恢复成你之前那版综合介绍首页，适合直接作为产品展示入口。</div>
+          <ul>
+            <li>保持你原本的视觉与内容</li>
+            <li>可直接用 file:// 打开</li>
+            <li>不走 React / Vite</li>
+          </ul>
+          <span class="cta">打开 index.html</span>
+        </a>
+
+        <a class="card dark" href="http://127.0.0.1:4174/">
+          <div class="tag mono">Live MVP</div>
+          <h2 class="display">真实 MVP 入口</h2>
+          <div class="desc">接了 Supabase Auth 和数据库的版本。这个入口需要本地开发服务正在运行。</div>
+          <ul>
+            <li>Magic Link 登录</li>
+            <li>真实 profile / progress 读取</li>
+            <li>数据库迁移已完成</li>
+          </ul>
+          <span class="cta">打开 127.0.0.1:4174</span>
+        </a>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+          <a class="card" href="./Campus Quest.html">
+            <div class="tag mono">Mobile Demo</div>
+            <h2 class="display" style="font-size:22px;">App 端</h2>
+            <div class="desc">移动端高保真原型。</div>
+            <span class="cta">打开</span>
+          </a>
+          <a class="card" href="./Campus Quest Web.html">
+            <div class="tag mono">Desktop Demo</div>
+            <h2 class="display" style="font-size:22px;">网页端</h2>
+            <div class="desc">桌面端演示原型。</div>
+            <span class="cta">打开</span>
+          </a>
+        </div>
+      </section>
+    </div>
+  </div>
+</body>
+</html>

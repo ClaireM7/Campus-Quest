@@ -1,0 +1,2107 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Campus Quest · Hi-Fi Prototype</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; height: 100%; }
+    body {
+      font-family: "Inter", "Noto Sans SC", system-ui, -apple-system, sans-serif;
+      background: #0F0E0A;
+      color: #15140F;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    .display { font-family: "Space Grotesk", "Noto Sans SC", sans-serif; letter-spacing: -0.02em; }
+    .mono    { font-family: "JetBrains Mono", ui-monospace, monospace; font-feature-settings: "tnum"; }
+    button { font-family: inherit; cursor: pointer; border: 0; background: transparent; padding: 0; color: inherit; }
+    a { color: inherit; text-decoration: none; }
+    .stage {
+      position: fixed; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      background: radial-gradient(80% 60% at 50% 20%, #1d1c16 0%, #0F0E0A 60%);
+    }
+    .stage::before {
+      content: ""; position: absolute; inset: 0;
+      background-image: radial-gradient(rgba(255,255,255,0.04) 1px, transparent 1px);
+      background-size: 24px 24px; pointer-events: none;
+    }
+    .device {
+      position: relative;
+      width: 390px; height: 844px;
+      border-radius: 52px;
+      background: #15140F;
+      box-shadow:
+        0 60px 120px rgba(0,0,0,0.6),
+        0 20px 40px rgba(0,0,0,0.4),
+        inset 0 0 0 2px #2a2820,
+        inset 0 0 0 8px #15140F;
+      padding: 8px;
+    }
+    .screen {
+      width: 100%; height: 100%;
+      border-radius: 44px;
+      overflow: hidden;
+      background: #F1ECDF;
+      position: relative;
+      isolation: isolate;
+    }
+    .device::after {
+      content: ""; position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
+      width: 120px; height: 32px; background: #15140F; border-radius: 20px; z-index: 50;
+    }
+    .side {
+      position: fixed; top: 24px; left: 24px; color: rgba(255,255,255,0.55);
+      font-family: "JetBrains Mono", monospace; font-size: 11px; letter-spacing: 1.6px;
+      text-transform: uppercase;
+    }
+    .side b { color: #C9F23E; font-weight: 600; }
+    .hint {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+      color: rgba(255,255,255,0.4);
+      font-family: "JetBrains Mono", monospace; font-size: 10px; letter-spacing: 1.2px;
+      text-transform: uppercase; text-align: center;
+    }
+    .hint kbd {
+      background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 4px; padding: 2px 6px; margin: 0 3px; color: rgba(255,255,255,0.7);
+    }
+    .noscroll::-webkit-scrollbar { display: none; }
+    .noscroll { scrollbar-width: none; -ms-overflow-style: none; }
+
+    /* Animations */
+    @keyframes cq-fade-up { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes cq-toast-in { from { opacity: 0; transform: translateY(-12px) scale(0.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
+    @keyframes cq-pop { 0% { transform: scale(1); } 50% { transform: scale(1.18); } 100% { transform: scale(1); } }
+    @keyframes cq-shimmer { 0% { background-position: -120% 0; } 100% { background-position: 220% 0; } }
+    @keyframes cq-pulse { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }
+    @keyframes cq-glow { 0%, 100% { box-shadow: 0 0 0 0 rgba(201,242,62,0); } 50% { box-shadow: 0 0 0 6px rgba(201,242,62,0.18); } }
+    @keyframes cq-ring { 0% { transform: scale(0.6); opacity: 0.7; } 100% { transform: scale(2.4); opacity: 0; } }
+
+    .cq-pop { animation: cq-pop 480ms cubic-bezier(.4,1.4,.6,1); }
+    .cq-fade-up { animation: cq-fade-up 320ms ease-out both; }
+    .cq-shimmer {
+      background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.55) 50%, transparent 100%);
+      background-size: 200% 100%;
+      animation: cq-shimmer 1.4s ease-in-out infinite;
+    }
+    .cq-screen-enter { animation: cq-fade-up 280ms ease-out both; }
+
+    @media (max-width: 720px), (max-height: 720px) {
+      .side, .hint { display: none; }
+    }
+  </style>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.25.6/babel.min.js" crossorigin="anonymous"></script>
+  <script>
+    /* Auto-fit the 390×844 device frame to any viewport */
+    (function() {
+      const fit = () => {
+        const dev = document.getElementById('device');
+        if (!dev) return;
+        const margin = 60;
+        const sH = (window.innerHeight - margin) / 844;
+        const sW = (window.innerWidth - margin) / 390;
+        const scale = Math.min(1, sH, sW);
+        dev.style.transform = scale < 1 ? `scale(${scale})` : '';
+        dev.style.transformOrigin = 'center center';
+      };
+      window.addEventListener('resize', fit);
+      window.addEventListener('load', fit);
+      setTimeout(fit, 0); setTimeout(fit, 200);
+    })();
+  </script>
+</head>
+<body>
+  <div class="side">
+    <span>CAMPUS QUEST</span> · <b>S04 · 湖畔之春</b><br/>
+    <span style="opacity:0.6">HI-FI PROTOTYPE · CORNELL ITHACA</span>
+  </div>
+  <div class="hint">
+    点击底部 <kbd>Tab</kbd> 切换 · 卡片可点 · 任务可完成 · 完成后看徽章变化
+  </div>
+  <div class="stage">
+    <div class="device" id="device">
+      <div class="screen" id="root"></div>
+    </div>
+  </div>
+
+  <script type="text/babel" data-presets="env,react">
+    const { useState, useEffect, useRef, useMemo, useCallback, createContext, useContext, Fragment } = React;
+
+    /* ================================================================
+       DESIGN TOKENS
+    ================================================================ */
+    const T = {
+      bg: '#F1ECDF', bg2: '#E8E0CA',
+      ink: '#15140F', ink2: '#3A382E',
+      muted: '#736B57', subtle: '#A89E82',
+      surface: '#FFFDF7', card: '#FAF5E6', cardAlt: '#EFE8D2',
+      line: '#DCD3B8', lineSoft: '#E8DFC4',
+      lime: '#C9F23E', limeDeep: '#7FA01F',
+      coral: '#FF6A3D', amber: '#FFB547',
+      blue: '#5B8DF6', green: '#4A8050', sky: '#A8D5E6',
+      water: '#9DC8DC',
+      brown: '#2A2820', brownDeep: '#15140F',
+    };
+
+    /* ================================================================
+       ICONS
+    ================================================================ */
+    const Ic = {
+      Home: ({s=20,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 11l8-7 8 7v8a2 2 0 0 1-2 2h-3v-6h-6v6H6a2 2 0 0 1-2-2v-8z"/></svg>,
+      Map: ({s=20,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2V6z"/><path d="M9 4v16M15 6v16"/></svg>,
+      Play: ({s=20,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="9" r="3.5"/><circle cx="17" cy="11" r="2.5"/><path d="M3 20c1-3 3.5-4.5 6-4.5s5 1.5 6 4.5"/><path d="M14 19c0.6-2.2 2.2-3.5 4-3.5"/></svg>,
+      Badge: ({s=20,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3l2.5 2.5L18 5l1 3.5L21.5 11 19 13.5 18 17l-3.5-.5L12 19l-2.5-2.5L6 17l-1-3.5L2.5 11 5 8.5 6 5l3.5.5L12 3z"/><path d="M9 11l2.5 2.5L15 10"/></svg>,
+      Spark: ({s=14,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill={c}><path d="M12 2l1.8 5.4L19 9l-5.2 1.6L12 16l-1.8-5.4L5 9l5.2-1.6L12 2zm6 11l1 3 3 1-3 1-1 3-1-3-3-1 3-1 1-3z"/></svg>,
+      Flame: ({s=14,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill={c}><path d="M12 2s5 4 5 9a5 5 0 1 1-10 0c0-2 1-3 2-4-1 3 2 4 2 4s-2-3 1-9z"/></svg>,
+      Clock: ({s=14,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>,
+      Walk: ({s=16,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="13" cy="4" r="1.6"/><path d="M9 21l3-7 3 3 3 1"/><path d="M5 13l3-3 3 1 2 3"/></svg>,
+      Run: ({s=16,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="14" cy="4" r="1.6"/><path d="M5 21l4-6-2-3 4-3 3 3 3 1"/><path d="M14 9l-2 5"/></svg>,
+      Stretch: ({s=16,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="4" r="1.7"/><path d="M5 10l4-2 3 1 3-1 4 2"/><path d="M9 9l1 6-2 5"/><path d="M15 9l-1 6 2 5"/></svg>,
+      Group: ({s=16,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="9" r="3"/><circle cx="17" cy="10" r="2.4"/><path d="M3 19c.8-3 3-4.5 6-4.5s5.2 1.5 6 4.5"/><path d="M15 19c.5-2 2-3 3.5-3"/></svg>,
+      Compass: ({s=16,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5 5-2z"/></svg>,
+      ArrowR: ({s=16,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>,
+      Plus: ({s=14,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2.4" strokeLinecap="round"><path d="M12 5v14M5 12h14"/></svg>,
+      Check: ({s=14,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l5 5 9-11"/></svg>,
+      Close: ({s=14,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>,
+      Bell: ({s=18,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M6 16l-1 2h14l-1-2V11a6 6 0 1 0-12 0v5z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg>,
+      Search: ({s=16,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/></svg>,
+      Pin: ({s=16,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s7-7.5 7-13a7 7 0 1 0-14 0c0 5.5 7 13 7 13z"/><circle cx="12" cy="9" r="2.5"/></svg>,
+      Lock: ({s=14,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 1 1 8 0v3"/></svg>,
+      Filter: ({s=14,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 5h16l-6 8v6l-4-2v-4L4 5z"/></svg>,
+      Layers: ({s=14,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 13l9 5 9-5"/></svg>,
+      ChevDown: ({s=14,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6"/></svg>,
+      ChevR: ({s=14,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6"/></svg>,
+      Trophy: ({s=18,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M7 4h10v4a5 5 0 0 1-10 0V4z"/><path d="M5 6H3v2a3 3 0 0 0 3 3M19 6h2v2a3 3 0 0 1-3 3"/><path d="M10 14h4v3l1 3H9l1-3v-3z"/></svg>,
+      Lightning: ({s=14,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill={c}><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z"/></svg>,
+    };
+
+    /* ================================================================
+       UTILS
+    ================================================================ */
+    const cls = (...xs) => xs.filter(Boolean).join(' ');
+    const fmt = (n) => n.toLocaleString('en-US');
+
+    /* ================================================================
+       TOAST SYSTEM
+    ================================================================ */
+    const ToastCtx = createContext(null);
+    const useToast = () => useContext(ToastCtx);
+
+    function ToastHost({toasts}) {
+      return (
+        <div style={{
+          position:'absolute', top: 56, left: 0, right: 0, zIndex: 60,
+          display:'flex', flexDirection:'column', alignItems:'center', gap: 8,
+          pointerEvents:'none', padding: '0 24px',
+        }}>
+          {toasts.map(t => (
+            <div key={t.id}
+              style={{
+                animation: 'cq-toast-in 240ms cubic-bezier(.2,1,.4,1) both',
+                background: t.tone === 'dark' ? T.brownDeep : T.surface,
+                color: t.tone === 'dark' ? '#FFF' : T.ink,
+                border: t.tone === 'dark' ? 'none' : `1px solid ${T.line}`,
+                borderRadius: 14,
+                padding: '11px 14px',
+                boxShadow: '0 12px 24px rgba(20,18,12,0.18), 0 2px 4px rgba(20,18,12,0.06)',
+                display:'flex', alignItems:'center', gap: 10,
+                fontSize: 13, fontWeight: 500, letterSpacing: '0.01em',
+                maxWidth: '100%',
+              }}>
+              <div style={{
+                width: 22, height: 22, borderRadius: 11,
+                background: t.tone === 'dark' ? T.lime : T.lime,
+                color: T.brownDeep, display:'grid', placeItems:'center',
+                flex:'0 0 auto'
+              }}>
+                {t.icon === 'check' ? <Ic.Check s={12} c={T.brownDeep} /> :
+                 t.icon === 'spark' ? <Ic.Spark s={12} c={T.brownDeep} /> :
+                 t.icon === 'group' ? <Ic.Group s={12} c={T.brownDeep} /> :
+                 t.icon === 'pin' ? <Ic.Pin s={12} c={T.brownDeep} /> :
+                 <Ic.Check s={12} c={T.brownDeep} />}
+              </div>
+              <div style={{display:'flex', flexDirection:'column', minWidth: 0}}>
+                <div style={{whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}}>{t.title}</div>
+                {t.detail && <div style={{fontSize: 11, opacity: 0.65, fontWeight: 400, marginTop: 1}}>{t.detail}</div>}
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    /* ================================================================
+       SHARED PRIMITIVES
+    ================================================================ */
+    function StatusBar({tone='light'}) {
+      const c = tone === 'light' ? T.ink : '#FFF';
+      return (
+        <div style={{
+          height: 48, width: '100%', display:'flex', alignItems:'flex-end',
+          justifyContent:'space-between', padding: '0 28px 4px',
+          color: c, fontSize: 14, fontWeight: 600, letterSpacing: '0.01em',
+          fontFamily:'"Space Grotesk", sans-serif',
+          flex: '0 0 auto', position: 'relative', zIndex: 5,
+        }}>
+          <span>9:41</span>
+          <span style={{display:'flex', alignItems:'center', gap: 6, opacity: 0.85}}>
+            <svg width="16" height="10" viewBox="0 0 18 12" fill="none">
+              <rect x="1" y="6" width="2.5" height="5" rx="0.5" fill={c}/>
+              <rect x="5" y="4" width="2.5" height="7" rx="0.5" fill={c}/>
+              <rect x="9" y="2" width="2.5" height="9" rx="0.5" fill={c}/>
+              <rect x="13" y="0" width="2.5" height="11" rx="0.5" fill={c}/>
+            </svg>
+            <svg width="14" height="10" viewBox="0 0 16 12" fill="none">
+              <path d="M8 3a8 8 0 0 1 5 1.7l-1 1.3a6 6 0 0 0-8 0L3 4.7A8 8 0 0 1 8 3zM8 6.5a4 4 0 0 1 2.5.9l-1 1.3a2 2 0 0 0-3 0l-1-1.3A4 4 0 0 1 8 6.5z" fill={c}/>
+              <circle cx="8" cy="10" r="1" fill={c}/>
+            </svg>
+            <svg width="22" height="10" viewBox="0 0 24 12" fill="none">
+              <rect x="0.5" y="0.5" width="20" height="11" rx="2.5" stroke={c} fill="none"/>
+              <rect x="2" y="2" width="14" height="8" rx="1" fill={c}/>
+              <rect x="21" y="4" width="2" height="4" rx="0.5" fill={c}/>
+            </svg>
+          </span>
+        </div>
+      );
+    }
+
+    function TabBar({active, setActive}) {
+      const items = [
+        { k:'home', label:'首页', Icon: Ic.Home },
+        { k:'map', label:'地图', Icon: Ic.Map },
+        { k:'play', label:'共玩', Icon: Ic.Play },
+        { k:'badges', label:'徽章', Icon: Ic.Badge },
+      ];
+      return (
+        <div style={{
+          flex: '0 0 auto', position: 'relative',
+          padding: '8px 14px 18px',
+          background: 'linear-gradient(180deg, rgba(241,236,223,0) 0%, rgba(241,236,223,0.85) 30%, #F1ECDF 60%)',
+        }}>
+          <div style={{
+            background: T.surface,
+            borderRadius: 22,
+            border: `1px solid ${T.line}`,
+            display:'flex', justifyContent:'space-around', padding: '8px 6px',
+            boxShadow: '0 4px 14px rgba(20,18,12,0.06), 0 1px 2px rgba(20,18,12,0.04)',
+          }}>
+            {items.map(it => {
+              const on = active === it.k;
+              return (
+                <button key={it.k}
+                  onClick={() => setActive(it.k)}
+                  style={{
+                    flex: 1, display:'flex', flexDirection:'column', alignItems:'center', gap: 2,
+                    padding: '6px 4px',
+                    color: on ? T.ink : T.subtle,
+                    transition: 'color 200ms',
+                    position:'relative',
+                  }}>
+                  <div style={{
+                    width: 36, height: 28, display:'grid', placeItems:'center',
+                    borderRadius: 10,
+                    background: on ? T.lime : 'transparent',
+                    transition: 'background 200ms',
+                  }}>
+                    <it.Icon s={19} c={on ? T.brownDeep : T.subtle} />
+                  </div>
+                  <div style={{
+                    fontSize: 10.5, fontWeight: on ? 700 : 500, letterSpacing:'0.04em',
+                    color: on ? T.ink : T.subtle,
+                  }}>{it.label}</div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      );
+    }
+
+    function Pill({children, tone='neutral', size='sm', icon}) {
+      const tones = {
+        neutral: { bg: T.cardAlt, fg: T.ink2, bd: 'transparent' },
+        ink: { bg: T.brownDeep, fg: T.lime, bd: 'transparent' },
+        lime: { bg: T.lime, fg: T.brownDeep, bd: 'transparent' },
+        coral: { bg: '#FFE7DD', fg: '#B74519', bd: 'transparent' },
+        amber: { bg: '#FFF1D6', fg: '#8C5A00', bd: 'transparent' },
+        green: { bg: '#E5EFD7', fg: '#3F5E1F', bd: 'transparent' },
+        blue: { bg: '#E2ECFC', fg: '#274A95', bd: 'transparent' },
+        ghost: { bg: 'transparent', fg: T.muted, bd: T.line },
+        invert: { bg: 'rgba(255,255,255,0.12)', fg: '#FFF', bd: 'rgba(255,255,255,0.18)'},
+      };
+      const t = tones[tone] || tones.neutral;
+      const pad = size === 'xs' ? '2px 7px' : size === 'lg' ? '6px 12px' : '4px 9px';
+      const fs = size === 'xs' ? 10 : size === 'lg' ? 12 : 11;
+      return (
+        <span style={{
+          display:'inline-flex', alignItems:'center', gap: 4,
+          background: t.bg, color: t.fg,
+          border: t.bd === 'transparent' ? 'none' : `1px solid ${t.bd}`,
+          padding: pad, borderRadius: 999,
+          fontSize: fs, fontWeight: 600, letterSpacing: '0.02em',
+          lineHeight: 1, whiteSpace: 'nowrap'
+        }}>
+          {icon}{children}
+        </span>
+      );
+    }
+
+    function VitalityCounter({value}) {
+      const [display, setDisplay] = useState(value);
+      const prev = useRef(value);
+      const [pop, setPop] = useState(false);
+      useEffect(() => {
+        if (value === prev.current) return;
+        const start = prev.current;
+        const end = value;
+        const dur = 600;
+        const t0 = performance.now();
+        let raf;
+        const tick = (t) => {
+          const p = Math.min(1, (t - t0) / dur);
+          const eased = 1 - Math.pow(1 - p, 3);
+          const v = Math.round(start + (end - start) * eased);
+          setDisplay(v);
+          if (p < 1) raf = requestAnimationFrame(tick);
+          else prev.current = end;
+        };
+        raf = requestAnimationFrame(tick);
+        setPop(true);
+        const tm = setTimeout(() => setPop(false), 480);
+        return () => { cancelAnimationFrame(raf); clearTimeout(tm); };
+      }, [value]);
+      return (
+        <span className={pop ? 'cq-pop' : ''} style={{display:'inline-block'}}>{display}</span>
+      );
+    }
+
+    /* ================================================================
+       PRODUCT POSITIONING + ONBOARDING
+    ================================================================ */
+    function OnboardCard({onDismiss, dismissed, onJump}) {
+      const [collapsed, setCollapsed] = useState(false);
+      if (dismissed) return null;
+      const steps = [
+        { n:1, t:'在首页完成一个今日任务', d:'最快体验任务系统', tab:null },
+        { n:2, t:'去地图页点开校园点位', d:'查看任务详情并开始', tab:'map' },
+        { n:3, t:'在共玩页加入临时组队', d:'体验轻社交联动', tab:'play' },
+        { n:4, t:'在徽章页查看进度变化', d:'观察行为如何沉淀', tab:'badges' },
+      ];
+      if (collapsed) {
+        return (
+          <button onClick={() => setCollapsed(false)} style={{
+            display:'flex', alignItems:'center', gap: 8,
+            background: T.brownDeep, color: '#FFF',
+            padding: '8px 12px 8px 14px', borderRadius: 999,
+            fontSize: 12, fontWeight: 500,
+            border: `1px solid ${T.brownDeep}`,
+            boxShadow: '0 4px 10px rgba(20,18,12,0.10)',
+          }}>
+            <span style={{
+              width: 18, height: 18, borderRadius: 999, background: T.lime,
+              color: T.brownDeep, display:'grid', placeItems:'center', fontSize: 10, fontWeight: 700,
+            }}>?</span>
+            <span style={{color:'#FFF'}}>试玩引导</span>
+            <Ic.ChevR s={12} c="rgba(255,255,255,0.6)" />
+          </button>
+        );
+      }
+      return (
+        <div style={{
+          background: T.brownDeep, color: '#FFF',
+          borderRadius: 22, padding: 16,
+          border: `1px solid ${T.brownDeep}`,
+          boxShadow: '0 8px 22px rgba(20,18,12,0.18)',
+          position:'relative', overflow:'hidden',
+        }} className="cq-fade-up">
+          <div style={{
+            position:'absolute', right: -30, top: -30,
+            width: 140, height: 140, borderRadius: 999,
+            background: 'radial-gradient(circle, rgba(201,242,62,0.18) 0%, transparent 60%)',
+          }} />
+          <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom: 10, position:'relative'}}>
+            <div>
+              <div style={{display:'flex', alignItems:'center', gap: 6, marginBottom: 4}}>
+                <span style={{
+                  fontSize: 10, fontWeight: 700, letterSpacing: '0.16em',
+                  color: T.lime,
+                }} className="mono">TRY THIS DEMO</span>
+                <span style={{width: 4, height: 4, background: 'rgba(255,255,255,0.3)', borderRadius:99}}/>
+                <span style={{fontSize: 10, color: 'rgba(255,255,255,0.55)', letterSpacing: '0.08em'}} className="mono">2 MIN · 4 STEPS</span>
+              </div>
+              <div className="display" style={{fontSize: 19, fontWeight: 600, lineHeight: 1.25}}>
+                推荐试玩顺序
+              </div>
+              <div style={{fontSize: 12, color:'rgba(255,255,255,0.62)', marginTop: 3, lineHeight: 1.4}}>
+                按下面 4 步即可完整体验产品核心闭环
+              </div>
+            </div>
+            <div style={{display:'flex', gap: 6}}>
+              <button onClick={() => setCollapsed(true)} style={{
+                width: 28, height: 28, borderRadius: 999,
+                background:'rgba(255,255,255,0.08)',
+                border:'1px solid rgba(255,255,255,0.12)',
+                display:'grid', placeItems:'center', color: '#FFF'
+              }} aria-label="收起">
+                <Ic.ChevDown s={14} c="rgba(255,255,255,0.7)"/>
+              </button>
+              <button onClick={onDismiss} style={{
+                width: 28, height: 28, borderRadius: 999,
+                background:'rgba(255,255,255,0.08)',
+                border:'1px solid rgba(255,255,255,0.12)',
+                display:'grid', placeItems:'center', color: '#FFF'
+              }} aria-label="关闭">
+                <Ic.Close s={12} c="rgba(255,255,255,0.7)"/>
+              </button>
+            </div>
+          </div>
+
+          <div style={{display:'flex', flexDirection:'column', gap: 6, position:'relative'}}>
+            {steps.map((s, i) => (
+              <button key={s.n} onClick={() => s.tab && onJump?.(s.tab)} style={{
+                display:'flex', alignItems:'center', gap: 11,
+                padding: '8px 10px',
+                borderRadius: 12,
+                background: i === 0 ? 'rgba(201,242,62,0.10)' : 'rgba(255,255,255,0.04)',
+                border: i === 0 ? '1px solid rgba(201,242,62,0.30)' : '1px solid rgba(255,255,255,0.06)',
+                textAlign:'left', cursor: s.tab ? 'pointer' : 'default',
+              }}>
+                <span style={{
+                  width: 22, height: 22, borderRadius: 999,
+                  background: i === 0 ? T.lime : 'rgba(255,255,255,0.12)',
+                  color: i === 0 ? T.brownDeep : '#FFF',
+                  display:'grid', placeItems:'center',
+                  fontSize: 11, fontWeight: 700, flex:'0 0 auto',
+                }} className="mono">{s.n}</span>
+                <span style={{flex: 1, minWidth: 0}}>
+                  <div style={{fontSize: 13, fontWeight: 500, color:'#FFF'}}>{s.t}</div>
+                  <div style={{fontSize: 11, color:'rgba(255,255,255,0.5)', marginTop: 1}}>{s.d}</div>
+                </span>
+                {s.tab && <Ic.ChevR s={12} c="rgba(255,255,255,0.4)"/>}
+              </button>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    /* ================================================================
+       HOME SCREEN
+    ================================================================ */
+    const HOME_TASKS = [
+      {
+        id: 't1', kind: 'explore', recommended: true,
+        title: '黄昏湖畔环线',
+        sub: 'Beebe Lake · 1 圈 ≈ 1.6 km',
+        tag: '探索 · 步行', badge: '推荐开始',
+        duration: '约 25 分钟',
+        method: '步行 · 任意配速',
+        reward: 45,
+        rewardLine: '+45 活力 · 推进「湖畔探索 · I」 · 点亮西坡区域',
+        Icon: Ic.Walk, accent: '#5B8DF6', accentSoft: '#E2ECFC',
+        desc: '沿着 Beebe Lake 走一圈。途经樱花步道与水坝观景台，是开启赛季最轻量的方式。',
+        affectsBadge: 'lake', badgePoints: 25,
+        litArea: 'beebe',
+      },
+      {
+        id: 't2', kind: 'recovery',
+        title: '10 分钟拉伸恢复',
+        sub: '宿舍 / 任意安静角落',
+        tag: '恢复 · 拉伸',
+        duration: '约 10 分钟',
+        method: '拉伸 · 跟随节奏',
+        reward: 20,
+        rewardLine: '+20 活力 · 推进「修复者」徽章',
+        Icon: Ic.Stretch, accent: '#7FA01F', accentSoft: '#E5EFD7',
+        desc: '4 个核心动作循环 2 轮。睡前完成最佳，不打卡也能记录。',
+        affectsBadge: 'recover', badgePoints: 30,
+      },
+      {
+        id: 't3', kind: 'training',
+        title: 'Libe Slope 上下三趟',
+        sub: 'Libe Slope · 坡度训练',
+        tag: '训练 · 高强度',
+        duration: '约 18 分钟',
+        method: '快走 / 慢跑',
+        reward: 60,
+        rewardLine: '+60 活力 · 推进「坡道征服者」 · 点亮中坡区域',
+        Icon: Ic.Run, accent: '#FF6A3D', accentSoft: '#FFE7DD',
+        desc: '从 Libe Slope 底部到 McGraw Tower 来回三次。配速自定，重在完成。',
+        affectsBadge: 'slope', badgePoints: 35,
+        litArea: 'slope',
+      },
+    ];
+
+    function HomeTaskCard({task, state, onComplete, expanded, onExpand}) {
+      const completed = state.taskState[task.id] === 'completed';
+      return (
+        <div style={{
+          background: completed ? T.cardAlt : T.surface,
+          borderRadius: 20,
+          border: `1px solid ${task.recommended && !completed ? T.brownDeep : T.line}`,
+          padding: 14,
+          transition: 'all 240ms ease',
+          opacity: completed ? 0.78 : 1,
+          position:'relative',
+          boxShadow: task.recommended && !completed ? '0 6px 18px rgba(20,18,12,0.10)' : '0 2px 6px rgba(20,18,12,0.04)',
+        }} className="cq-fade-up">
+          {task.recommended && !completed && (
+            <div style={{
+              position:'absolute', top: -9, left: 14,
+              background: T.brownDeep, color: T.lime,
+              padding: '3px 9px', borderRadius: 999,
+              fontSize: 10, fontWeight: 700, letterSpacing: '0.10em',
+              display:'flex', alignItems:'center', gap: 4,
+            }} className="mono">
+              <Ic.Spark s={10} c={T.lime}/>
+              {task.badge}
+            </div>
+          )}
+          <div style={{display:'flex', gap: 12, alignItems:'flex-start'}}>
+            <div style={{
+              width: 44, height: 44, borderRadius: 14,
+              background: completed ? '#E5EFD7' : task.accentSoft,
+              display:'grid', placeItems:'center',
+              flex:'0 0 auto', position:'relative',
+            }}>
+              {completed
+                ? <Ic.Check s={20} c={T.green}/>
+                : <task.Icon s={22} c={task.accent}/>}
+            </div>
+            <div style={{flex: 1, minWidth: 0}}>
+              <div style={{display:'flex', alignItems:'center', gap: 6, marginBottom: 3}}>
+                <Pill tone="ghost" size="xs">{task.tag}</Pill>
+                {completed && <Pill tone="green" size="xs" icon={<Ic.Check s={9}/>}>已完成</Pill>}
+              </div>
+              <div className="display" style={{
+                fontSize: 16, fontWeight: 600, color: T.ink,
+                textDecoration: completed ? 'line-through' : 'none',
+                textDecorationColor: T.subtle,
+              }}>{task.title}</div>
+              <div style={{fontSize: 12, color: T.muted, marginTop: 2}}>{task.sub}</div>
+            </div>
+            <button onClick={onExpand} style={{
+              width: 28, height: 28, borderRadius: 999,
+              background: T.cardAlt, display:'grid', placeItems:'center',
+              transition:'transform 220ms', transform: expanded ? 'rotate(180deg)' : 'rotate(0)',
+            }}>
+              <Ic.ChevDown s={14} c={T.muted}/>
+            </button>
+          </div>
+          {expanded && (
+            <div className="cq-fade-up" style={{marginTop: 12, paddingTop: 12, borderTop: `1px dashed ${T.lineSoft}`}}>
+              <div style={{fontSize: 13, color: T.ink2, lineHeight: 1.5}}>{task.desc}</div>
+              <div style={{
+                display:'grid', gridTemplateColumns:'1fr 1fr', gap: 8,
+                marginTop: 12,
+              }}>
+                <div style={{background: T.cardAlt, borderRadius: 10, padding: '7px 10px'}}>
+                  <div style={{fontSize: 10, color: T.muted, fontWeight: 500}}>耗时</div>
+                  <div style={{fontSize: 12, color: T.ink, fontWeight: 600}} className="mono">{task.duration}</div>
+                </div>
+                <div style={{background: T.cardAlt, borderRadius: 10, padding: '7px 10px'}}>
+                  <div style={{fontSize: 10, color: T.muted, fontWeight: 500}}>方式</div>
+                  <div style={{fontSize: 12, color: T.ink, fontWeight: 600}}>{task.method}</div>
+                </div>
+              </div>
+              <div style={{
+                marginTop: 10, padding: '9px 11px',
+                background: 'rgba(201,242,62,0.16)', borderRadius: 10,
+                fontSize: 11.5, color: T.ink2, lineHeight: 1.4,
+                display:'flex', alignItems:'center', gap: 6,
+              }}>
+                <Ic.Lightning s={11} c={T.limeDeep}/>
+                <span>{task.rewardLine}</span>
+              </div>
+              {!completed ? (
+                <button onClick={onComplete} style={{
+                  marginTop: 12, width: '100%',
+                  background: T.brownDeep, color: '#FFF',
+                  padding: '12px 16px', borderRadius: 14,
+                  fontSize: 14, fontWeight: 600,
+                  display:'flex', alignItems:'center', justifyContent:'center', gap: 8,
+                }}>
+                  <Ic.Check s={15} c={T.lime}/> 完成任务 · +{task.reward} 活力
+                </button>
+              ) : (
+                <div style={{
+                  marginTop: 12, width: '100%',
+                  background: T.cardAlt, color: T.muted,
+                  padding: '12px 16px', borderRadius: 14, textAlign:'center',
+                  fontSize: 13, fontWeight: 500,
+                }}>
+                  本日任务已完成，明天再来 ✦
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    function ScreenHome({state, actions, onJump}) {
+      const [expanded, setExpanded] = useState('t1');
+      const litCount = state.seasonLit;
+      const target = state.seasonTotal;
+      const pct = Math.round((litCount / target) * 100);
+
+      return (
+        <div className="cq-screen-enter" style={{
+          flex: 1, overflowY:'auto', overflowX:'hidden',
+          padding: '8px 18px 24px', display:'flex', flexDirection:'column', gap: 14,
+        }} className="noscroll cq-screen-enter">
+          {/* Header strip */}
+          <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', padding: '4px 2px'}}>
+            <div style={{display:'flex', alignItems:'center', gap: 10}}>
+              <div style={{
+                width: 38, height: 38, borderRadius: 12,
+                background: T.brownDeep, color: T.lime,
+                display:'grid', placeItems:'center',
+                fontFamily:'"Space Grotesk"', fontWeight: 700, fontSize: 16,
+                letterSpacing:'-0.04em',
+              }}>CQ</div>
+              <div>
+                <div style={{fontSize: 11, color: T.muted, letterSpacing:'0.06em'}} className="mono">
+                  早安 · CORNELL ITHACA
+                </div>
+                <div className="display" style={{fontSize: 17, fontWeight: 600, color: T.ink, marginTop: 1}}>
+                  Hey, 毛柯兰 ·
+                  <span style={{color: T.coral, marginLeft: 6}}>第 14 天</span>
+                </div>
+              </div>
+            </div>
+            <button style={{
+              width: 38, height: 38, borderRadius: 12,
+              background: T.surface, border: `1px solid ${T.line}`,
+              display:'grid', placeItems:'center', position:'relative',
+            }} title="通知">
+              <Ic.Bell s={17} c={T.ink2}/>
+              <span style={{
+                position:'absolute', top: 9, right: 10, width: 7, height: 7,
+                borderRadius: 999, background: T.coral,
+                border: `1.5px solid ${T.surface}`,
+              }}/>
+            </button>
+          </div>
+
+          {/* SEASON HERO */}
+          <div style={{
+            background: `linear-gradient(160deg, ${T.brownDeep} 0%, #1F1D14 65%, #2A2820 100%)`,
+            color: '#FFF', borderRadius: 24, padding: 18, position:'relative', overflow:'hidden',
+            border: `1px solid ${T.brownDeep}`,
+            boxShadow: '0 16px 36px rgba(20,18,12,0.30)',
+          }}>
+            <div style={{
+              position:'absolute', top: -40, right: -30, width: 200, height: 200, borderRadius: '50%',
+              background: 'radial-gradient(circle, rgba(201,242,62,0.22) 0%, transparent 60%)',
+            }}/>
+            <div style={{position:'relative'}}>
+              <div style={{display:'flex', alignItems:'center', gap: 6, marginBottom: 6}}>
+                <span style={{
+                  background: 'rgba(201,242,62,0.18)', color: T.lime,
+                  padding: '3px 8px', borderRadius: 999,
+                  fontSize: 10, fontWeight: 700, letterSpacing:'0.12em',
+                }} className="mono">SEASON · S04</span>
+                <span style={{fontSize: 11, color: 'rgba(255,255,255,0.5)'}} className="mono">04.10 → 06.20</span>
+              </div>
+              <div className="display" style={{fontSize: 26, fontWeight: 600, letterSpacing:'-0.02em'}}>
+                湖畔之春 · Lakeside Spring
+              </div>
+              <div style={{fontSize: 12.5, color:'rgba(255,255,255,0.62)', marginTop: 4, lineHeight: 1.45}}>
+                把真实校园空间变成赛季任务、地图探索与轻协作挑战
+              </div>
+
+              <div style={{display:'flex', alignItems:'flex-end', justifyContent:'space-between', marginTop: 16}}>
+                <div>
+                  <div style={{display:'flex', alignItems:'baseline', gap: 6}}>
+                    <span className="display" style={{fontSize: 36, fontWeight: 700, color: T.lime, letterSpacing:'-0.04em'}}>
+                      <VitalityCounter value={state.vitality}/>
+                    </span>
+                    <span style={{fontSize: 11, color:'rgba(255,255,255,0.5)', letterSpacing:'0.08em'}} className="mono">VITALITY</span>
+                  </div>
+                  <div style={{fontSize: 11, color:'rgba(255,255,255,0.5)', marginTop: 2}}>
+                    今日 · 距下个赛季奖励还差 {Math.max(0, 320 - state.vitality)}
+                  </div>
+                </div>
+                <div style={{textAlign:'right'}}>
+                  <div style={{fontSize: 11, color:'rgba(255,255,255,0.5)', letterSpacing:'0.06em'}} className="mono">点亮区域</div>
+                  <div className="mono" style={{fontSize: 18, fontWeight: 600, color:'#FFF', marginTop: 2}}>
+                    <VitalityCounter value={litCount}/><span style={{color:'rgba(255,255,255,0.4)'}}>/{target}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* progress */}
+              <div style={{marginTop: 12, height: 5, borderRadius: 999, background:'rgba(255,255,255,0.10)', overflow:'hidden'}}>
+                <div style={{
+                  width: pct + '%', height: '100%', borderRadius: 999,
+                  background: `linear-gradient(90deg, ${T.lime}, #E0FF7A)`,
+                  transition: 'width 600ms cubic-bezier(.2,1,.4,1)',
+                }}/>
+              </div>
+            </div>
+          </div>
+
+          {/* ONBOARDING */}
+          <OnboardCard
+            dismissed={state.onboardDismissed}
+            onDismiss={actions.dismissOnboard}
+            onJump={onJump}
+          />
+
+          {/* TODAY TASKS */}
+          <div style={{display:'flex', alignItems:'baseline', justifyContent:'space-between', marginTop: 4, padding:'0 2px'}}>
+            <div>
+              <div className="display" style={{fontSize: 18, fontWeight: 600, color: T.ink}}>
+                今日任务
+              </div>
+              <div style={{fontSize: 12, color: T.muted, marginTop: 1}}>
+                为你挑选了 3 件小事 · 探索 / 恢复 / 训练
+              </div>
+            </div>
+            <div style={{display:'flex', alignItems:'center', gap: 4, fontSize: 11, color: T.muted}} className="mono">
+              <Ic.Flame s={12} c={T.coral}/> 连续 14 天
+            </div>
+          </div>
+
+          <div style={{display:'flex', flexDirection:'column', gap: 10}}>
+            {HOME_TASKS.map(task => (
+              <HomeTaskCard
+                key={task.id}
+                task={task}
+                state={state}
+                expanded={expanded === task.id}
+                onExpand={() => setExpanded(expanded === task.id ? null : task.id)}
+                onComplete={() => actions.completeTask(task)}
+              />
+            ))}
+          </div>
+
+          {/* Quick links */}
+          <div style={{
+            display:'grid', gridTemplateColumns:'1fr 1fr', gap: 10, marginTop: 6,
+          }}>
+            <button onClick={() => onJump('map')} style={{
+              background: T.surface, borderRadius: 16, padding: 12,
+              border: `1px solid ${T.line}`, textAlign:'left',
+              display:'flex', flexDirection:'column', gap: 4,
+            }}>
+              <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+                <Ic.Map s={18} c={T.ink2}/>
+                <Ic.ArrowR s={14} c={T.subtle}/>
+              </div>
+              <div style={{fontSize: 13, fontWeight: 600, color: T.ink, marginTop: 4}}>校园地图</div>
+              <div style={{fontSize: 11, color: T.muted}}>
+                看看哪些区域可以探索
+              </div>
+            </button>
+            <button onClick={() => onJump('play')} style={{
+              background: T.surface, borderRadius: 16, padding: 12,
+              border: `1px solid ${T.line}`, textAlign:'left',
+              display:'flex', flexDirection:'column', gap: 4,
+            }}>
+              <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+                <Ic.Play s={18} c={T.ink2}/>
+                <Ic.ArrowR s={14} c={T.subtle}/>
+              </div>
+              <div style={{fontSize: 13, fontWeight: 600, color: T.ink, marginTop: 4}}>共玩</div>
+              <div style={{fontSize: 11, color: T.muted}}>
+                附近正在发生 6 场 · 含你领域
+              </div>
+            </button>
+          </div>
+
+          <div style={{height: 14}}/>
+        </div>
+      );
+    }
+
+    /* ================================================================
+       MAP SCREEN — Cornell-style stylized map
+    ================================================================ */
+    const MAP_POIS = [
+      {
+        id:'m1', x: 232, y: 280, name:'Beebe Lake', en:'Lakeside Loop',
+        zone:'beebe',
+        type:'探索', method:'步行 · 任意配速', duration:'约 25 分钟',
+        reward: 45, distance:'1.6 km',
+        affectsBadge:'lake', badgePoints: 25,
+        desc:'沿湖岸的轻量环线，含樱花步道与水坝观景台。完成后点亮西坡区域，并推进「湖畔探索」徽章进度。'
+      },
+      {
+        id:'m2', x: 178, y: 422, name:'Libe Slope', en:'Slope Sprint',
+        zone:'slope',
+        type:'训练', method:'快走 / 慢跑', duration:'约 18 分钟',
+        reward: 60, distance:'坡 × 3',
+        affectsBadge:'slope', badgePoints: 35,
+        desc:'从坡底到 McGraw Tower 来回三次。完成后点亮中坡区域，并推进「坡道征服者」徽章。'
+      },
+      {
+        id:'m3', x: 296, y: 392, name:'McGraw Tower', en:'Tower Climb',
+        zone:'arts',
+        type:'探索', method:'步行 · 含台阶', duration:'约 12 分钟',
+        reward: 30, distance:'162 阶',
+        affectsBadge:'lake', badgePoints: 10,
+        desc:'校园地标。绕塔一圈 + 拾阶而上的小挑战，适合作为下午茶后的提神。'
+      },
+      {
+        id:'m4', x: 124, y: 522, name:'Cascadilla Gorge', en:'Gorge Trail',
+        zone:'gorge',
+        type:'恢复', method:'徒步 · 慢节奏', duration:'约 30 分钟',
+        reward: 35, distance:'2.1 km',
+        affectsBadge:'recover', badgePoints: 15,
+        desc:'沿瀑布与溪流而下的步道。低强度恢复任务，适合训练后的次日。'
+      },
+      {
+        id:'m5', x: 260, y: 580, name:'Schoellkopf Field', en:'Track Workout',
+        zone:'field',
+        type:'组队', method:'间歇训练', duration:'45 分钟',
+        reward: 70, distance:'400 m × 6',
+        affectsBadge:'spring', badgePoints: 20, requiresGroup: true,
+        desc:'田径场的间歇训练，需要 3 人以上成组。可在共玩页发起或加入。'
+      },
+    ];
+    const ZONE_BY_ID = { beebe:'湖畔', slope:'西坡', arts:'艺术四方院', gorge:'峡谷', field:'田径场' };
+
+    function CampusMapSVG({pois, state, onTap, selected, viewBox}) {
+      const lit = state.litAreas;
+      const vb = viewBox ? `${viewBox.x} ${viewBox.y} ${viewBox.w} ${viewBox.h}` : '0 0 390 700';
+      return (
+        <svg viewBox={vb} width="100%" height="100%" preserveAspectRatio="xMidYMid slice"
+             style={{display:'block', userSelect:'none'}}>
+          <defs>
+            <pattern id="dotgrid" width="14" height="14" patternUnits="userSpaceOnUse">
+              <circle cx="1" cy="1" r="0.6" fill={T.line} opacity="0.55"/>
+            </pattern>
+            <radialGradient id="poi-glow" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor={T.lime} stopOpacity="0.35"/>
+              <stop offset="100%" stopColor={T.lime} stopOpacity="0"/>
+            </radialGradient>
+            <linearGradient id="lake-grad" x1="0" x2="1" y1="0" y2="1">
+              <stop offset="0%" stopColor="#B6D7E5"/>
+              <stop offset="100%" stopColor="#7FB3CB"/>
+            </linearGradient>
+            <linearGradient id="forest-grad" x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0%" stopColor="#CCD9A8"/>
+              <stop offset="100%" stopColor="#A6BB7F"/>
+            </linearGradient>
+          </defs>
+
+          {/* base — extends beyond viewport for pan room */}
+          <rect x="-200" y="-200" width="790" height="1100" fill="#EFE7CF"/>
+          <rect x="-200" y="-200" width="790" height="1100" fill="url(#dotgrid)"/>
+
+          {/* forests / green */}
+          <path d="M 0,0 L 90,0 Q 110,80 60,120 Q 10,160 0,140 Z" fill="url(#forest-grad)" opacity="0.85"/>
+          <path d="M 280,0 L 390,0 L 390,160 Q 340,180 320,140 Q 290,100 280,0 Z" fill="url(#forest-grad)" opacity="0.9"/>
+          <path d="M 0,580 Q 60,560 90,610 Q 110,660 70,700 L 0,700 Z" fill="url(#forest-grad)" opacity="0.85"/>
+
+          {/* Beebe Lake */}
+          <path d="M 130,250 Q 150,210 220,222 Q 290,232 312,266 Q 320,308 280,326 Q 220,344 170,326 Q 118,308 130,250 Z"
+            fill="url(#lake-grad)" opacity="0.95"/>
+          <path d="M 130,250 Q 150,210 220,222 Q 290,232 312,266 Q 320,308 280,326 Q 220,344 170,326 Q 118,308 130,250 Z"
+            fill="none" stroke="#7AA3B8" strokeWidth="1" opacity="0.45"/>
+          <text x="222" y="282" textAnchor="middle"
+            style={{fontFamily:'"Space Grotesk"', fontSize: 11, fontWeight: 600, fill:'#3D6478', letterSpacing:'0.08em'}}>BEEBE LAKE</text>
+
+          {/* gorge curve */}
+          <path d="M 80,460 Q 130,500 160,540 Q 200,600 250,640" fill="none"
+            stroke="#7AA3B8" strokeWidth="3" opacity="0.55" strokeLinecap="round"/>
+          <path d="M 80,460 Q 130,500 160,540 Q 200,600 250,640" fill="none"
+            stroke="#B5D4E0" strokeWidth="6" opacity="0.30" strokeLinecap="round"/>
+
+          {/* main path */}
+          <path d="M 200,330 Q 200,380 178,420 Q 160,460 180,500 Q 210,540 260,560 Q 290,575 296,392 Z"
+            fill="none" stroke={T.line} strokeWidth="1.5" strokeDasharray="4 5" opacity="0.7"/>
+          <path d="M 232,290 L 296,392 L 178,422 L 124,520 L 260,580"
+            fill="none" stroke={T.line} strokeWidth="1.6" strokeDasharray="5 6" opacity="0.65" strokeLinecap="round"/>
+
+          {/* arts quad */}
+          <rect x="270" y="354" width="90" height="80" rx="8" fill="#E5DCC0" stroke={T.line} strokeWidth="1"/>
+          <text x="315" y="402" textAnchor="middle"
+            style={{fontFamily:'"Space Grotesk"', fontSize: 9, fill: T.muted, letterSpacing:'0.10em'}}>ARTS QUAD</text>
+
+          {/* Libe Slope (slope shape) */}
+          <path d="M 130,420 L 220,388 L 220,460 L 130,490 Z" fill="#D4DDB7" opacity="0.75"/>
+          <text x="175" y="438" textAnchor="middle"
+            style={{fontFamily:'"Space Grotesk"', fontSize: 9, fill:'#506C2C', letterSpacing:'0.10em'}}>LIBE SLOPE</text>
+
+          {/* track field */}
+          <ellipse cx="262" cy="582" rx="42" ry="26" fill="#D9C9A8" stroke={T.line} strokeWidth="1"/>
+          <ellipse cx="262" cy="582" rx="32" ry="18" fill="none" stroke="#A5895E" strokeWidth="1" strokeDasharray="2 3" opacity="0.7"/>
+          <text x="262" y="586" textAnchor="middle"
+            style={{fontFamily:'"Space Grotesk"', fontSize: 8, fill:'#7C5F36', letterSpacing:'0.08em'}}>SCHOELLKOPF</text>
+
+          {/* lit zone overlays */}
+          {lit.includes('arts') && (
+            <rect x="270" y="354" width="90" height="80" rx="8" fill={T.lime} opacity="0.30"/>
+          )}
+          {lit.includes('slope') && (
+            <path d="M 130,420 L 220,388 L 220,460 L 130,490 Z" fill={T.lime} opacity="0.35"/>
+          )}
+          {lit.includes('beebe') && (
+            <path d="M 130,250 Q 150,210 220,222 Q 290,232 312,266 Q 320,308 280,326 Q 220,344 170,326 Q 118,308 130,250 Z"
+              fill={T.lime} opacity="0.20"/>
+          )}
+          {lit.includes('gorge') && (
+            <path d="M 80,460 Q 130,500 160,540 Q 200,600 250,640" fill="none"
+              stroke={T.lime} strokeWidth="10" opacity="0.30" strokeLinecap="round"/>
+          )}
+          {lit.includes('field') && (
+            <ellipse cx="262" cy="582" rx="42" ry="26" fill={T.lime} opacity="0.30"/>
+          )}
+
+          {/* POIs */}
+          {pois.map(p => {
+            const isLit = lit.includes(p.zone);
+            const isActive = selected === p.id;
+            const inProgress = state.mapTaskState[p.id] === 'inProgress';
+            const labelY = p.y < 100 ? p.y + 28 : p.y - 18;
+            return (
+              <g key={p.id} data-poi="1"
+                onPointerUp={(e) => { e.stopPropagation(); onTap(p.id); }}
+                style={{cursor:'pointer'}} className="cq-fade-up">
+                {/* hit area — generous so it's easy to tap */}
+                <circle cx={p.x} cy={p.y} r="22" fill="rgba(0,0,0,0.001)"/>
+                {(isActive || inProgress) && (
+                  <circle cx={p.x} cy={p.y} r="22" fill="url(#poi-glow)" pointerEvents="none"/>
+                )}
+                <circle cx={p.x} cy={p.y} r={isActive ? 13 : 10}
+                  fill={isLit ? T.lime : '#FFF'}
+                  stroke={T.brownDeep}
+                  strokeWidth={isActive ? 2.5 : 2}
+                  pointerEvents="none"/>
+                {isLit && <circle cx={p.x} cy={p.y} r="4" fill={T.brownDeep} pointerEvents="none"/>}
+                {!isLit && <circle cx={p.x} cy={p.y} r="3" fill={T.coral} pointerEvents="none"/>}
+                {/* POI name label */}
+                <g pointerEvents="none">
+                  <rect x={p.x - p.name.length*3.6 - 6} y={labelY - 9} width={p.name.length*7.2 + 12} height="16" rx="8"
+                    fill={isActive ? T.brownDeep : 'rgba(255,253,247,0.92)'}
+                    stroke={isActive ? T.brownDeep : T.line} strokeWidth="0.8"/>
+                  <text x={p.x} y={labelY + 2} textAnchor="middle"
+                    style={{fontFamily:'"Inter"', fontSize: 9.5, fontWeight: 600,
+                            fill: isActive ? T.lime : T.ink2, letterSpacing:'0.02em'}}>
+                    {p.name}
+                  </text>
+                </g>
+                {(isActive) && (
+                  <circle cx={p.x} cy={p.y} r="14" fill="none" stroke={T.lime} strokeWidth="2" opacity="0.6" pointerEvents="none">
+                    <animate attributeName="r" values="14;26" dur="1.4s" repeatCount="indefinite"/>
+                    <animate attributeName="opacity" values="0.7;0" dur="1.4s" repeatCount="indefinite"/>
+                  </circle>
+                )}
+              </g>
+            );
+          })}
+
+          {/* Compass */}
+          <g transform="translate(348, 32)">
+            <circle r="14" fill="#FFF" stroke={T.line}/>
+            <path d="M 0,-8 L 3,0 L 0,8 L -3,0 Z" fill={T.coral}/>
+            <text y="-18" textAnchor="middle" style={{fontFamily:'"JetBrains Mono"', fontSize: 9, fill: T.muted}}>N</text>
+          </g>
+        </svg>
+      );
+    }
+
+    function ScreenMap({state, actions}) {
+      const [selected, setSelected] = useState(null);
+      const [filter, setFilter] = useState('all');
+      const [viewBox, setViewBox] = useState({x: 0, y: 0, w: 390, h: 700});
+      const [sheetMode, setSheetMode] = useState('peek'); // 'peek' | 'full'
+      const dragRef = useRef(null);
+      const mapBoxRef = useRef(null);
+
+      const poi = MAP_POIS.find(p => p.id === selected);
+      const taskState = poi ? state.mapTaskState[poi.id] : 'idle';
+
+      const filtered = filter === 'all' ? MAP_POIS : MAP_POIS.filter(p => {
+        if (filter === '探索') return p.type === '探索';
+        if (filter === '训练') return p.type === '训练';
+        if (filter === '恢复') return p.type === '恢复';
+        if (filter === '组队') return p.type === '组队';
+      });
+
+      const zoomBy = (factor) => {
+        setViewBox(vb => {
+          const newW = Math.max(180, Math.min(560, vb.w * factor));
+          const newH = newW * (700 / 390);
+          const cx = vb.x + vb.w / 2, cy = vb.y + vb.h / 2;
+          return {
+            x: Math.max(-150, Math.min(540 - newW, cx - newW / 2)),
+            y: Math.max(-150, Math.min(850 - newH, cy - newH / 2)),
+            w: newW, h: newH,
+          };
+        });
+      };
+
+      const onPointerDown = (e) => {
+        if (e.target.closest('[data-poi]') || e.target.closest('[data-control]')) return;
+        const pt = e.touches ? e.touches[0] : e;
+        if (e.cancelable) e.preventDefault();
+        dragRef.current = { x: pt.clientX, y: pt.clientY, vbx: viewBox.x, vby: viewBox.y, moved: false };
+      };
+      const onPointerMove = (e) => {
+        if (!dragRef.current) return;
+        const pt = e.touches ? e.touches[0] : e;
+        const rect = mapBoxRef.current?.getBoundingClientRect();
+        if (!rect) return;
+        const sx = viewBox.w / rect.width, sy = viewBox.h / rect.height;
+        const dx = (dragRef.current.x - pt.clientX) * sx;
+        const dy = (dragRef.current.y - pt.clientY) * sy;
+        if (Math.abs(dx) > 2 || Math.abs(dy) > 2) dragRef.current.moved = true;
+        setViewBox(vb => ({ ...vb,
+          x: Math.max(-150, Math.min(540 - vb.w, dragRef.current.vbx + dx)),
+          y: Math.max(-150, Math.min(850 - vb.h, dragRef.current.vby + dy)),
+        }));
+      };
+      const onPointerUp = () => { dragRef.current = null; };
+      const handlePoiTap = (id) => {
+        if (dragRef.current && dragRef.current.moved) return;
+        setSelected(id);
+        setSheetMode('full');
+      };
+
+      return (
+        <div className="cq-screen-enter" style={{
+          flex: 1, position:'relative', display:'flex', flexDirection:'column',
+          background: T.bg, overflow:'hidden',
+        }}>
+          {/* Top bar */}
+          <div style={{
+            position:'absolute', top: 8, left: 14, right: 14, zIndex: 8,
+            display:'flex', flexDirection:'column', gap: 8,
+          }}>
+            <div style={{display:'flex', gap: 8, alignItems:'center'}}>
+              <div style={{
+                flex: 1, display:'flex', alignItems:'center', gap: 8,
+                background: T.surface, borderRadius: 14,
+                border: `1px solid ${T.line}`, padding: '10px 12px',
+                boxShadow: '0 4px 12px rgba(20,18,12,0.08)',
+              }}>
+                <Ic.Search s={15} c={T.muted}/>
+                <span style={{fontSize: 13, color: T.subtle, flex: 1}}>搜索校园点位 · 路线 · 任务</span>
+                <Pill tone="ghost" size="xs">Preview</Pill>
+              </div>
+              <button style={{
+                width: 40, height: 40, borderRadius: 14,
+                background: T.surface, border: `1px solid ${T.line}`,
+                display:'grid', placeItems:'center',
+                boxShadow: '0 4px 12px rgba(20,18,12,0.08)',
+              }} title="筛选">
+                <Ic.Layers s={16} c={T.ink2}/>
+              </button>
+            </div>
+            <div style={{
+              display:'flex', gap: 6, overflowX:'auto', paddingBottom: 2,
+            }} className="noscroll">
+              {[
+                {k:'all', label:'全部'},
+                {k:'探索', label:'探索'},
+                {k:'训练', label:'训练'},
+                {k:'恢复', label:'恢复'},
+                {k:'组队', label:'组队'},
+              ].map(t => (
+                <button key={t.k} onClick={() => setFilter(t.k)} style={{
+                  padding: '5px 11px', borderRadius: 999,
+                  background: filter === t.k ? T.brownDeep : T.surface,
+                  color: filter === t.k ? '#FFF' : T.ink2,
+                  border: `1px solid ${filter === t.k ? T.brownDeep : T.line}`,
+                  fontSize: 12, fontWeight: 500,
+                  whiteSpace:'nowrap', flex:'0 0 auto',
+                }}>{t.label}</button>
+              ))}
+            </div>
+          </div>
+
+          {/* Map */}
+          <div ref={mapBoxRef}
+            onMouseDown={onPointerDown} onMouseMove={onPointerMove}
+            onMouseUp={onPointerUp} onMouseLeave={onPointerUp}
+            onTouchStart={onPointerDown} onTouchMove={onPointerMove} onTouchEnd={onPointerUp}
+            style={{
+              flex: 1, position:'relative',
+              cursor: dragRef.current ? 'grabbing' : 'grab',
+              touchAction:'none', userSelect:'none', WebkitUserSelect:'none',
+            }}>
+            <CampusMapSVG pois={filtered} state={state} onTap={handlePoiTap} selected={selected} viewBox={viewBox}/>
+
+            {/* season badge corner */}
+            <div data-control="1" style={{
+              position:'absolute', top: 102, right: 14,
+              background: T.brownDeep, color: '#FFF',
+              borderRadius: 14, padding: '8px 10px',
+              display:'flex', alignItems:'center', gap: 8,
+              boxShadow: '0 6px 14px rgba(20,18,12,0.20)',
+              zIndex: 5,
+            }}>
+              <div style={{
+                width: 26, height: 26, borderRadius: 999, background: T.lime,
+                display:'grid', placeItems:'center',
+              }}>
+                <Ic.Spark s={13} c={T.brownDeep}/>
+              </div>
+              <div>
+                <div style={{fontSize: 9, color:'rgba(255,255,255,0.55)', letterSpacing:'0.10em'}} className="mono">SEASON LIT</div>
+                <div className="mono" style={{fontSize: 14, fontWeight: 600}}>
+                  <VitalityCounter value={state.seasonLit}/>/{state.seasonTotal}
+                </div>
+              </div>
+            </div>
+
+            {/* Zoom controls */}
+            <div data-control="1" style={{
+              position:'absolute', right: 14, top: 168,
+              display:'flex', flexDirection:'column', gap: 2,
+              background: T.surface, border: `1px solid ${T.line}`,
+              borderRadius: 12, padding: 4, zIndex: 5,
+              boxShadow: '0 4px 12px rgba(20,18,12,0.10)',
+            }}>
+              <button onClick={() => zoomBy(0.75)} title="放大" style={{
+                width: 34, height: 34, borderRadius: 8, display:'grid', placeItems:'center',
+                fontSize: 18, fontWeight: 600, color: T.ink,
+              }}>+</button>
+              <div style={{height: 1, background: T.lineSoft}}/>
+              <button onClick={() => zoomBy(1.33)} title="缩小" style={{
+                width: 34, height: 34, borderRadius: 8, display:'grid', placeItems:'center',
+                fontSize: 18, fontWeight: 600, color: T.ink,
+              }}>−</button>
+              <div style={{height: 1, background: T.lineSoft}}/>
+              <button onClick={() => setViewBox({x:0, y:0, w:390, h:700})} title="复位" style={{
+                width: 34, height: 34, borderRadius: 8, display:'grid', placeItems:'center', color: T.muted,
+              }}><Ic.Compass s={14} c={T.muted}/></button>
+            </div>
+
+            {/* legend */}
+            <div data-control="1" style={{
+              position:'absolute', bottom: poi && sheetMode === 'full' ? 250 : 70, left: 14,
+              background: T.surface, border: `1px solid ${T.line}`,
+              borderRadius: 12, padding: '8px 10px',
+              fontSize: 11, color: T.ink2,
+              display:'flex', gap: 10, alignItems:'center',
+              boxShadow: '0 4px 12px rgba(20,18,12,0.08)',
+              transition:'bottom 240ms ease', zIndex: 5,
+            }}>
+              <span style={{display:'flex', alignItems:'center', gap: 5}}>
+                <span style={{width: 10, height: 10, borderRadius:99, background: T.lime, border:`1.5px solid ${T.brownDeep}`}}/>已点亮
+              </span>
+              <span style={{width: 1, height: 12, background: T.line}}/>
+              <span style={{display:'flex', alignItems:'center', gap: 5}}>
+                <span style={{width: 10, height: 10, borderRadius:99, background:'#FFF', border:`1.5px solid ${T.brownDeep}`}}/>待探索
+              </span>
+            </div>
+
+            {/* Hint when no POI selected */}
+            {!poi && (
+              <div data-control="1" style={{
+                position:'absolute', bottom: 16, left: 14, right: 14,
+                background: T.brownDeep, color:'#FFF',
+                borderRadius: 14, padding:'10px 14px',
+                display:'flex', alignItems:'center', gap: 10,
+                fontSize: 12, fontWeight: 500,
+                boxShadow:'0 8px 20px rgba(20,18,12,0.18)', zIndex: 5,
+              }}>
+                <Ic.Pin s={14} c={T.lime}/>
+                <span style={{flex: 1, color:'rgba(255,255,255,0.85)'}}>
+                  点击任意点位查看任务详情 · 拖动地图 · 右上角缩放
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Task detail sheet - PEEK */}
+          {poi && sheetMode === 'peek' && (
+            <button onClick={() => setSheetMode('full')} style={{
+              position:'absolute', left: 14, right: 14, bottom: 14,
+              background: T.surface,
+              borderRadius: 16,
+              border:`1px solid ${T.line}`,
+              padding: '10px 14px',
+              boxShadow: '0 8px 22px rgba(20,18,12,0.14)',
+              zIndex: 6, display:'flex', alignItems:'center', gap: 10,
+              textAlign:'left',
+            }} className="cq-fade-up" key={'peek-'+poi.id}>
+              <div style={{
+                width: 32, height: 32, borderRadius: 10,
+                background: state.litAreas.includes(poi.zone) ? T.lime : T.cardAlt,
+                display:'grid', placeItems:'center', flex:'0 0 auto',
+              }}>
+                <Ic.Pin s={15} c={state.litAreas.includes(poi.zone) ? T.brownDeep : T.coral}/>
+              </div>
+              <div style={{flex: 1, minWidth: 0}}>
+                <div style={{fontSize: 11, color: T.muted, letterSpacing:'0.04em'}}>{poi.type} · {poi.duration}</div>
+                <div className="display" style={{fontSize: 14, fontWeight: 600, color: T.ink, lineHeight: 1.2, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}}>
+                  {poi.name}
+                </div>
+              </div>
+              <span className="mono" style={{
+                background: T.cardAlt, color: T.ink,
+                padding:'5px 8px', borderRadius: 8,
+                fontSize: 11, fontWeight: 600,
+                display:'flex', alignItems:'center', gap: 3, flex:'0 0 auto',
+              }}><Ic.Lightning s={10} c={T.limeDeep}/>+{poi.reward}</span>
+              <span style={{fontSize: 12, color: T.muted, fontWeight: 500}}>展开 ↑</span>
+            </button>
+          )}
+
+          {/* Task detail sheet - FULL */}
+          {poi && sheetMode === 'full' && (
+            <div style={{
+              position:'absolute', left: 0, right: 0, bottom: 0,
+              background: T.surface,
+              borderRadius: '24px 24px 0 0',
+              borderTop: `1px solid ${T.line}`,
+              padding: '8px 18px 16px',
+              boxShadow: '0 -10px 28px rgba(20,18,12,0.08)',
+              zIndex: 6,
+            }} className="cq-fade-up" key={'full-'+poi.id}>
+              {/* drag handle / collapse */}
+              <button onClick={() => setSheetMode('peek')} style={{
+                width: '100%', display:'flex', justifyContent:'center', padding: '4px 0 8px',
+              }} title="收起">
+                <span style={{width: 42, height: 4, borderRadius: 99, background: T.line, display:'block'}}/>
+              </button>
+              <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap: 10}}>
+                <div style={{minWidth: 0, flex: 1}}>
+                  <div style={{display:'flex', alignItems:'center', gap: 6, marginBottom: 3, flexWrap:'wrap'}}>
+                    <Pill tone={
+                      poi.type === '探索' ? 'blue' :
+                      poi.type === '训练' ? 'coral' :
+                      poi.type === '恢复' ? 'green' : 'amber'
+                    } size="xs">{poi.type}</Pill>
+                    <Pill tone="ghost" size="xs" icon={<Ic.Pin s={9} c={T.muted}/>}>{poi.en}</Pill>
+                    {state.litAreas.includes(poi.zone) && (
+                      <Pill tone="lime" size="xs" icon={<Ic.Check s={9}/>}>已点亮</Pill>
+                    )}
+                  </div>
+                  <div className="display" style={{fontSize: 19, fontWeight: 600, color: T.ink, lineHeight: 1.15}}>
+                    {poi.name}
+                  </div>
+                  <div style={{fontSize: 12.5, color: T.muted, marginTop: 4, lineHeight: 1.4}}>
+                    {poi.desc}
+                  </div>
+                </div>
+                <div className="mono" style={{
+                  background: T.cardAlt, padding: '6px 10px', borderRadius: 12,
+                  fontSize: 11, color: T.ink, textAlign:'center', flex:'0 0 auto',
+                }}>
+                  <div style={{fontSize: 10, color: T.muted, fontWeight: 500}}>奖励</div>
+                  <div style={{display:'flex', alignItems:'center', gap: 3, marginTop: 2}}>
+                    <Ic.Lightning s={11} c={T.limeDeep}/>
+                    +{poi.reward}
+                  </div>
+                </div>
+              </div>
+
+              <div style={{
+                display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap: 8, marginTop: 12,
+              }}>
+                <div style={{background: T.cardAlt, borderRadius: 10, padding: '7px 10px'}}>
+                  <div style={{fontSize: 10, color: T.muted}}>方式</div>
+                  <div style={{fontSize: 11.5, color: T.ink, fontWeight: 600, marginTop: 2}}>{poi.method}</div>
+                </div>
+                <div style={{background: T.cardAlt, borderRadius: 10, padding: '7px 10px'}}>
+                  <div style={{fontSize: 10, color: T.muted}}>耗时</div>
+                  <div className="mono" style={{fontSize: 11.5, color: T.ink, fontWeight: 600, marginTop: 2}}>{poi.duration}</div>
+                </div>
+                <div style={{background: T.cardAlt, borderRadius: 10, padding: '7px 10px'}}>
+                  <div style={{fontSize: 10, color: T.muted}}>距离</div>
+                  <div className="mono" style={{fontSize: 11.5, color: T.ink, fontWeight: 600, marginTop: 2}}>{poi.distance}</div>
+                </div>
+              </div>
+
+              <div style={{
+                marginTop: 10, padding: '8px 11px',
+                background: 'rgba(201,242,62,0.16)', borderRadius: 10,
+                fontSize: 11.5, color: T.ink2, lineHeight: 1.4,
+                display:'flex', alignItems:'center', gap: 6,
+              }}>
+                <Ic.Spark s={11} c={T.limeDeep}/>
+                <span>完成可点亮「{ZONE_BY_ID[poi.zone]}」区域 · 推进徽章进度</span>
+              </div>
+
+              <div style={{marginTop: 12, display:'flex', gap: 8}}>
+                {taskState === 'idle' && !state.litAreas.includes(poi.zone) && (
+                  <button onClick={() => actions.startMapTask(poi)} style={{
+                    flex: 1,
+                    background: T.brownDeep, color: '#FFF',
+                    padding: '12px 16px', borderRadius: 14,
+                    fontSize: 14, fontWeight: 600,
+                    display:'flex', alignItems:'center', justifyContent:'center', gap: 6,
+                  }}>
+                    <Ic.Compass s={15} c={T.lime}/> 开始任务
+                  </button>
+                )}
+                {taskState === 'inProgress' && (
+                  <button onClick={() => actions.completeMapTask(poi)} style={{
+                    flex: 1,
+                    background: T.lime, color: T.brownDeep,
+                    padding: '12px 16px', borderRadius: 14,
+                    fontSize: 14, fontWeight: 700,
+                    display:'flex', alignItems:'center', justifyContent:'center', gap: 6,
+                    animation: 'cq-glow 1.6s ease-in-out infinite',
+                  }}>
+                    <Ic.Check s={15} c={T.brownDeep}/> 标记完成 · +{poi.reward} 活力
+                  </button>
+                )}
+                {(taskState === 'completed' || state.litAreas.includes(poi.zone)) && (
+                  <div style={{
+                    flex: 1, padding: '12px 16px', borderRadius: 14,
+                    background: '#E5EFD7', color: '#3F5E1F',
+                    textAlign:'center', fontSize: 13, fontWeight: 600,
+                    display:'flex', alignItems:'center', justifyContent:'center', gap: 6,
+                  }}>
+                    <Ic.Check s={14} c="#3F5E1F"/> 已点亮 · 任务完成
+                  </div>
+                )}
+                <button style={{
+                  width: 46, padding: '12px 0', borderRadius: 14,
+                  background: T.surface, border: `1px solid ${T.line}`,
+                  display:'grid', placeItems:'center',
+                }} title="路线导航" onClick={() => actions.toast({title:'路线模拟 · Preview', detail:'本原型聚焦任务与徽章闭环', tone:'dark', icon:'pin'})}>
+                  <Ic.Compass s={15} c={T.ink2}/>
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    /* ================================================================
+       PLAY SCREEN
+    ================================================================ */
+    const PLAY_LIST = [
+      {
+        id:'p1', host:'Mei · @neon_run', when:'18:30 起 · 5 min 后',
+        title:'Beebe Lake 3K 慢跑', sub:'临时组队 · 西坡集合',
+        type:'训练', need: 4, joined: 3, reward: 30,
+        affectsBadge:'spring', badgePoints: 25,
+        hot: true,
+      },
+      {
+        id:'p2', host:'Owen · @libe.daily', when:'19:00 起 · 28 min 后',
+        title:'Slope Day 拉伸圈', sub:'低强度 · 适合训练后',
+        type:'恢复', need: 6, joined: 2, reward: 20,
+        affectsBadge:'spring', badgePoints: 20,
+      },
+      {
+        id:'p3', host:'JIN · @tower.climb', when:'明早 07:30 起',
+        title:'McGraw 钟塔阶梯挑战', sub:'晨光出动 · 162 阶 × 2',
+        type:'探索', need: 4, joined: 1, reward: 40,
+        affectsBadge:'spring', badgePoints: 15,
+      },
+      {
+        id:'p4', host:'Track Crew · 校队', when:'今晚 20:00',
+        title:'400m × 6 间歇训练', sub:'Schoellkopf · 中阶以上',
+        type:'训练', need: 5, joined: 4, reward: 70,
+        affectsBadge:'spring', badgePoints: 30,
+      },
+    ];
+
+    function PlayCard({item, state, onJoin}) {
+      const joined = state.playState[item.id] === 'joined';
+      const headcount = item.joined + (joined ? 1 : 0);
+      const full = headcount >= item.need;
+      return (
+        <div style={{
+          background: T.surface, borderRadius: 18,
+          border: `1px solid ${joined ? T.brownDeep : T.line}`,
+          padding: 14,
+          transition: 'all 220ms', position:'relative',
+          boxShadow: joined ? '0 6px 16px rgba(20,18,12,0.10)' : '0 2px 6px rgba(20,18,12,0.04)',
+        }} className="cq-fade-up">
+          {item.hot && !joined && (
+            <div style={{
+              position:'absolute', top: -8, right: 14,
+              background: T.coral, color: '#FFF',
+              padding: '3px 8px', borderRadius: 999,
+              fontSize: 10, fontWeight: 700, letterSpacing: '0.08em',
+              display:'flex', alignItems:'center', gap: 3,
+            }} className="mono">
+              <Ic.Flame s={9} c="#FFF"/> 即将开始
+            </div>
+          )}
+          <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap: 10}}>
+            <div style={{minWidth: 0, flex: 1}}>
+              <div style={{display:'flex', alignItems:'center', gap: 6, marginBottom: 4, flexWrap:'wrap'}}>
+                <Pill tone={
+                  item.type === '训练' ? 'coral' :
+                  item.type === '恢复' ? 'green' : 'blue'
+                } size="xs">{item.type}</Pill>
+                <span style={{fontSize: 11, color: T.muted}} className="mono">{item.when}</span>
+              </div>
+              <div className="display" style={{fontSize: 16, fontWeight: 600, color: T.ink, lineHeight: 1.2}}>
+                {item.title}
+              </div>
+              <div style={{fontSize: 12, color: T.muted, marginTop: 2}}>{item.sub}</div>
+            </div>
+          </div>
+
+          {/* meta strip */}
+          <div style={{
+            display:'flex', alignItems:'center', justifyContent:'space-between',
+            marginTop: 12, paddingTop: 10, borderTop: `1px dashed ${T.lineSoft}`,
+          }}>
+            <div style={{display:'flex', alignItems:'center', gap: 8, flex: 1}}>
+              {/* avatars */}
+              <div style={{display:'flex'}}>
+                {Array.from({length: Math.min(headcount, 4)}).map((_, i) => (
+                  <div key={i} style={{
+                    width: 22, height: 22, borderRadius: 999,
+                    background: ['#FFB547','#5B8DF6','#FF6A3D','#7FA01F'][i % 4],
+                    border: `2px solid ${T.surface}`,
+                    marginLeft: i === 0 ? 0 : -7,
+                    color:'#FFF', display:'grid', placeItems:'center',
+                    fontSize: 10, fontWeight: 700,
+                  }}>
+                    {['M','O','J','T'][i % 4]}
+                  </div>
+                ))}
+                {headcount < item.need && (
+                  <div style={{
+                    width: 22, height: 22, borderRadius: 999,
+                    background: T.cardAlt, color: T.muted,
+                    border: `2px dashed ${T.line}`,
+                    marginLeft: -7, display:'grid', placeItems:'center',
+                  }}>
+                    <Ic.Plus s={10} c={T.muted}/>
+                  </div>
+                )}
+              </div>
+              <div className="mono" style={{fontSize: 11, color: T.ink2, fontWeight: 600}}>
+                {headcount}<span style={{color: T.muted}}>/{item.need}</span>
+                <span style={{color: T.muted, fontWeight: 400, marginLeft: 4}}>
+                  · 满 {item.need} 人自动开始
+                </span>
+              </div>
+            </div>
+            <div style={{display:'flex', alignItems:'center', gap: 4}}>
+              <Ic.Lightning s={11} c={T.limeDeep}/>
+              <span className="mono" style={{fontSize: 11, color: T.ink, fontWeight: 600}}>+{item.reward}</span>
+            </div>
+          </div>
+
+          {/* CTA */}
+          <button onClick={() => !joined && !full && onJoin(item)} disabled={joined || full} style={{
+            marginTop: 12, width: '100%',
+            background: joined ? '#E5EFD7' : full ? T.cardAlt : T.brownDeep,
+            color: joined ? '#3F5E1F' : full ? T.muted : '#FFF',
+            padding: '11px 16px', borderRadius: 12,
+            fontSize: 13, fontWeight: 600,
+            display:'flex', alignItems:'center', justifyContent:'center', gap: 6,
+            cursor: (joined || full) ? 'default' : 'pointer',
+          }}>
+            {joined ? <><Ic.Check s={14} c="#3F5E1F"/> 已加入 · 等待开始</> :
+             full ? <>已满员</> :
+             <><Ic.Plus s={13} c={T.lime}/> 加入 · 推进春日共玩</>}
+          </button>
+        </div>
+      );
+    }
+
+    function ScreenPlay({state, actions, onJump}) {
+      const heatmapData = [3,5,8,12,18,28,38,32,22,16,10,6,4,2];
+      return (
+        <div className="cq-screen-enter" style={{
+          flex: 1, overflowY:'auto', overflowX:'hidden',
+          padding: '8px 18px 24px', display:'flex', flexDirection:'column', gap: 14,
+        }} className="noscroll cq-screen-enter">
+          <div style={{padding: '4px 2px'}}>
+            <div style={{display:'flex', alignItems:'center', gap: 6, marginBottom: 3}}>
+              <span style={{
+                fontSize: 10, fontWeight: 700, letterSpacing: '0.16em', color: T.coral,
+              }} className="mono">CO·PLAY</span>
+              <span style={{width: 4, height: 4, background: T.line, borderRadius:99}}/>
+              <span style={{fontSize: 10, color: T.muted, letterSpacing: '0.08em'}} className="mono">现在 · CORNELL</span>
+            </div>
+            <div className="display" style={{fontSize: 24, fontWeight: 600, color: T.ink, letterSpacing:'-0.01em'}}>
+              共玩 · 校园里的轻协作
+            </div>
+            <div style={{
+              fontSize: 12.5, color: T.muted, marginTop: 6, lineHeight: 1.45,
+              padding: '8px 10px',
+              background: T.surface, borderRadius: 10,
+              border: `1px solid ${T.lineSoft}`,
+            }}>
+              <span style={{color: T.ink2, fontWeight: 500}}>不需要先加好友</span> · 基于同地点 · 同时段 · 同任务的轻量组队，与附近的人一起完成短时挑战
+            </div>
+          </div>
+
+          {/* Activity heatmap */}
+          <div style={{
+            background: T.surface, borderRadius: 18,
+            border: `1px solid ${T.line}`, padding: 14,
+            position:'relative', overflow:'hidden',
+          }}>
+            <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom: 10}}>
+              <div>
+                <div style={{display:'flex', alignItems:'center', gap: 5, marginBottom: 2}}>
+                  <span style={{
+                    width: 6, height: 6, borderRadius: 99, background: T.coral,
+                    animation: 'cq-pulse 1.6s ease-in-out infinite',
+                  }}/>
+                  <span style={{fontSize: 11, color: T.muted, letterSpacing:'0.06em'}} className="mono">LIVE · 校园活跃度</span>
+                </div>
+                <div className="display" style={{fontSize: 16, fontWeight: 600, color: T.ink}}>
+                  <span style={{color: T.coral}}>248</span> 人正在校园里运动
+                </div>
+              </div>
+              <button onClick={() => onJump('map')} style={{
+                background: T.cardAlt, color: T.ink2,
+                padding: '6px 10px', borderRadius: 999,
+                fontSize: 11, fontWeight: 500,
+                display:'flex', alignItems:'center', gap: 4,
+              }}>
+                去地图查看 <Ic.ArrowR s={11} c={T.ink2}/>
+              </button>
+            </div>
+            <div style={{display:'flex', gap: 3, alignItems:'flex-end', height: 56, padding: '0 2px'}}>
+              {heatmapData.map((v, i) => {
+                const h = (v / 38) * 100;
+                const isPeak = v === Math.max(...heatmapData);
+                return (
+                  <div key={i} style={{
+                    flex: 1, height: h + '%',
+                    background: isPeak ? T.coral : i > 6 && i < 10 ? '#FFB68A' : T.lime,
+                    borderRadius: 3, opacity: 0.85,
+                    transition: 'all 300ms',
+                  }}/>
+                );
+              })}
+            </div>
+            <div style={{
+              display:'flex', justifyContent:'space-between',
+              fontSize: 9.5, color: T.subtle, marginTop: 6,
+            }} className="mono">
+              <span>14:00</span><span>18:00 ↑ 峰值</span><span>22:00</span>
+            </div>
+          </div>
+
+          {/* List header */}
+          <div style={{display:'flex', alignItems:'baseline', justifyContent:'space-between', padding: '0 2px', marginTop: 4}}>
+            <div className="display" style={{fontSize: 17, fontWeight: 600, color: T.ink}}>
+              附近正在发生
+            </div>
+            <span className="mono" style={{fontSize: 11, color: T.muted}}>共 4 场 · 排序: 时间</span>
+          </div>
+
+          {PLAY_LIST.map(item => (
+            <PlayCard key={item.id} item={item} state={state} onJoin={actions.joinPlay}/>
+          ))}
+
+          <div style={{
+            background: T.cardAlt, borderRadius: 14, padding: '11px 14px',
+            display:'flex', alignItems:'center', gap: 10,
+            border: `1px dashed ${T.line}`,
+            marginTop: 4,
+          }}>
+            <div style={{
+              width: 32, height: 32, borderRadius: 10,
+              background: T.surface,
+              display:'grid', placeItems:'center',
+            }}>
+              <Ic.Plus s={16} c={T.ink2}/>
+            </div>
+            <div style={{flex: 1}}>
+              <div style={{fontSize: 12.5, color: T.ink, fontWeight: 600}}>发起一场共玩</div>
+              <div style={{fontSize: 11, color: T.muted, marginTop: 1}}>选定时间 / 地点 / 类型，附近的人就能加入</div>
+            </div>
+            <Pill tone="ghost" size="xs">Preview</Pill>
+          </div>
+
+          <div style={{height: 4}}/>
+        </div>
+      );
+    }
+
+    /* ================================================================
+       BADGES SCREEN
+    ================================================================ */
+    const ALL_BADGES = [
+      { id:'lake', name:'湖畔探索 · I', cat:'season', area:'beebe',
+        desc:'累计在 Beebe Lake 完成 4 次任务', target: 100,
+        Icon: ({c, s=22}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.6" strokeLinecap="round"><path d="M3 16c2-2 4-2 6 0s4 2 6 0 4-2 6 0"/><path d="M3 12c2-2 4-2 6 0s4 2 6 0 4-2 6 0"/><circle cx="12" cy="6" r="2.4"/></svg>
+      },
+      { id:'slope', name:'坡道征服者', cat:'place', area:'slope',
+        desc:'在 Libe Slope 累计完成 5 次坡度训练', target: 100,
+        Icon: ({c, s=22}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M3 20L20 6L20 20Z"/><path d="M9 20l3-7 3 3"/></svg>
+      },
+      { id:'recover', name:'修复者', cat:'season', area:null,
+        desc:'连续 7 天完成至少一次恢复类任务', target: 100,
+        Icon: ({c, s=22}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M12 21s-7-5-7-11a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 6-7 11-7 11z"/><path d="M9 11h2l1-2 1 4 1-2h2"/></svg>
+      },
+      { id:'spring', name:'春日共玩', cat:'event', area:null,
+        desc:'参与 5 次春日赛季的共玩活动', target: 100,
+        Icon: ({c, s=22}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="9" r="3"/><circle cx="17" cy="11" r="2.4"/><path d="M3 19c.8-3 3-4.5 6-4.5s5.2 1.5 6 4.5"/></svg>
+      },
+      { id:'tower', name:'钟塔常客', cat:'place', area:'arts',
+        desc:'登顶 McGraw Tower 3 次', target: 100,
+        Icon: ({c, s=22}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21V8l3-4 3 4v13"/><path d="M9 12h6M9 16h6"/></svg>
+      },
+      { id:'gorge', name:'峡谷漫步者', cat:'place', area:'gorge',
+        desc:'完成 Cascadilla Gorge 全段 2 次', target: 100,
+        Icon: ({c, s=22}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4l4 8-4 8h6l4-8-4-8z"/><path d="M14 4l4 8-4 8"/></svg>
+      },
+      { id:'streak', name:'14 天连续', cat:'season', area:null,
+        desc:'连续 14 天有运动行为', target: 100,
+        Icon: ({c, s=22}) => <svg width={s} height={s} viewBox="0 0 24 24" fill={c}><path d="M12 2s5 4 5 9a5 5 0 1 1-10 0c0-2 1-3 2-4-1 3 2 4 2 4s-2-3 1-9z"/></svg>,
+        locked: false,
+      },
+      { id:'firstweek', name:'首周开赛', cat:'event', area:null,
+        desc:'本赛季第一周完成 3 件事', target: 100,
+        Icon: ({c, s=22}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.6" strokeLinecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>,
+      },
+      { id:'limited', name:'湖畔之春 · 限定', cat:'limited', area:null,
+        desc:'本赛季完成湖畔系列全 3 个任务', target: 100,
+        Icon: ({c, s=22}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 15.4 6.8 18.1l1-5.8L3.5 8.2l5.9-.9z"/></svg>,
+      },
+    ];
+
+    const BADGE_STATIC = {
+      lake:    { earned: false, baseProgress: 60 },
+      slope:   { earned: false, baseProgress: 35 },
+      recover: { earned: false, baseProgress: 70 },
+      spring:  { earned: false, baseProgress: 30 },
+      tower:   { earned: false, baseProgress: 45 },
+      gorge:   { earned: false, baseProgress: 25 },
+      streak:  { earned: true,  baseProgress: 100 },
+      firstweek: { earned: true, baseProgress: 100 },
+      limited: { earned: false, baseProgress: 15 },
+    };
+
+    function BadgeTile({b, progress, recent}) {
+      const earned = progress >= 100;
+      const c = earned ? T.brownDeep : T.subtle;
+      return (
+        <div style={{
+          background: earned ? T.lime : T.surface,
+          borderRadius: 16, padding: 12,
+          border: `1px solid ${earned ? T.brownDeep : T.line}`,
+          position:'relative', overflow:'hidden',
+          boxShadow: recent ? '0 8px 22px rgba(201,242,62,0.40)' : 'none',
+          animation: recent ? 'cq-glow 1.6s ease-in-out 3' : 'none',
+          transition: 'all 280ms',
+        }}>
+          {recent && (
+            <div style={{
+              position:'absolute', top: 8, right: 8,
+              fontSize: 9, fontWeight: 700, letterSpacing:'0.10em',
+              color: T.coral,
+            }} className="mono">+ JUST NOW</div>
+          )}
+          <div style={{
+            width: 44, height: 44, borderRadius: 12,
+            background: earned ? T.brownDeep : T.cardAlt,
+            display:'grid', placeItems:'center', marginBottom: 8,
+          }}>
+            <b.Icon c={earned ? T.lime : c} s={22}/>
+          </div>
+          <div className="display" style={{
+            fontSize: 13, fontWeight: 600, color: earned ? T.brownDeep : T.ink,
+            lineHeight: 1.25,
+          }}>{b.name}</div>
+          <div style={{fontSize: 10.5, color: earned ? T.ink2 : T.muted, marginTop: 3, lineHeight: 1.3, minHeight: 28}}>
+            {b.desc}
+          </div>
+          <div style={{
+            marginTop: 8, height: 4, borderRadius: 99,
+            background: earned ? 'rgba(20,18,12,0.18)' : T.cardAlt,
+            overflow:'hidden',
+          }}>
+            <div style={{
+              width: progress + '%', height: '100%',
+              background: earned ? T.brownDeep : T.brownDeep,
+              transition: 'width 600ms cubic-bezier(.2,1,.4,1)',
+              borderRadius: 99,
+            }}/>
+          </div>
+          <div style={{
+            display:'flex', justifyContent:'space-between',
+            fontSize: 10, color: earned ? T.ink2 : T.muted,
+            marginTop: 4,
+          }} className="mono">
+            {earned ? <span style={{fontWeight: 700}}>已解锁</span> : <span>{progress}%</span>}
+            {!earned && <span style={{fontWeight: 600}}>{progress}/100</span>}
+          </div>
+        </div>
+      );
+    }
+
+    function ArchivePane({state, totalEarned}) {
+      const stats = [
+        { k:'已点亮区域', v: state.seasonLit, suf:`/${state.seasonTotal}`, c: T.lime },
+        { k:'共玩参与', v: Object.values(state.playState).filter(s => s === 'joined').length, suf:' 次', c: T.coral },
+        { k:'当前活力', v: state.vitality, suf:'', c: T.brownDeep },
+        { k:'解锁徽章', v: totalEarned, suf:'', c: T.amber },
+      ];
+      const dist = [
+        { k:'探索', v: 38, c: T.blue },
+        { k:'恢复', v: 24, c: T.green },
+        { k:'训练', v: 28, c: T.coral },
+        { k:'组队', v: 10, c: T.amber },
+      ];
+      return (
+        <div style={{display:'flex', flexDirection:'column', gap: 14}}>
+          <div style={{
+            background: T.surface, borderRadius: 18,
+            border: `1px solid ${T.line}`, padding: 14,
+          }}>
+            <div className="display" style={{fontSize: 14, fontWeight: 600, color: T.ink, marginBottom: 10}}>
+              本赛季 · 一眼概览
+            </div>
+            <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap: 10}}>
+              {stats.map(s => (
+                <div key={s.k} style={{
+                  background: T.cardAlt, borderRadius: 12, padding: '10px 12px',
+                }}>
+                  <div style={{fontSize: 11, color: T.muted}}>{s.k}</div>
+                  <div className="mono" style={{fontSize: 22, fontWeight: 700, color: T.ink, marginTop: 2, letterSpacing:'-0.02em'}}>
+                    {s.v}<span style={{color: T.muted, fontSize: 12, fontWeight: 500}}>{s.suf}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div style={{
+            background: T.surface, borderRadius: 18,
+            border: `1px solid ${T.line}`, padding: 14,
+          }}>
+            <div className="display" style={{fontSize: 14, fontWeight: 600, color: T.ink, marginBottom: 4}}>
+              任务类型分布
+            </div>
+            <div style={{fontSize: 11, color: T.muted, marginBottom: 12}}>
+              你这赛季最常做的事是「探索」类任务
+            </div>
+            <div style={{display:'flex', gap: 4, height: 16, borderRadius: 99, overflow:'hidden'}}>
+              {dist.map(d => (
+                <div key={d.k} style={{flex: d.v, background: d.c, opacity: 0.85}}/>
+              ))}
+            </div>
+            <div style={{display:'flex', flexDirection:'column', gap: 6, marginTop: 12}}>
+              {dist.map(d => (
+                <div key={d.k} style={{display:'flex', alignItems:'center', justifyContent:'space-between'}}>
+                  <div style={{display:'flex', alignItems:'center', gap: 6}}>
+                    <span style={{width: 8, height: 8, borderRadius: 99, background: d.c}}/>
+                    <span style={{fontSize: 12, color: T.ink}}>{d.k}</span>
+                  </div>
+                  <span className="mono" style={{fontSize: 11, color: T.muted}}>{d.v}%</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div style={{
+            background: T.surface, borderRadius: 18,
+            border: `1px solid ${T.line}`, padding: 14,
+          }}>
+            <div className="display" style={{fontSize: 14, fontWeight: 600, color: T.ink, marginBottom: 4}}>
+              活跃时段
+            </div>
+            <div style={{fontSize: 11, color: T.muted, marginBottom: 12}}>
+              你最常活跃在 <span style={{color: T.ink, fontWeight: 600}}>傍晚 17:30–19:00</span>
+            </div>
+            <div style={{display:'flex', gap: 3, alignItems:'flex-end', height: 50}}>
+              {[6,8,12,16,14,10,18,28,38,42,32,20,12,8].map((v, i) => (
+                <div key={i} style={{
+                  flex: 1, height: (v/42)*100 + '%',
+                  background: v > 30 ? T.coral : v > 16 ? T.amber : T.lime,
+                  borderRadius: 2, opacity: 0.85,
+                }}/>
+              ))}
+            </div>
+            <div style={{display:'flex', justifyContent:'space-between', fontSize: 9.5, color: T.subtle, marginTop: 6}} className="mono">
+              <span>06</span><span>12</span><span>18</span><span>23</span>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function ScreenBadges({state, actions}) {
+      const [filter, setFilter] = useState('all');
+      const [tab, setTab] = useState('badges');
+      const filtered = filter === 'all' ? ALL_BADGES :
+                       filter === 'season' ? ALL_BADGES.filter(b => b.cat === 'season' || b.cat === 'limited') :
+                       filter === 'limited' ? ALL_BADGES.filter(b => b.cat === 'limited') :
+                       filter === 'place' ? ALL_BADGES.filter(b => b.cat === 'place') :
+                       filter === 'event' ? ALL_BADGES.filter(b => b.cat === 'event') : ALL_BADGES;
+      const earned = ALL_BADGES.filter(b => (state.badges[b.id] ?? BADGE_STATIC[b.id].baseProgress) >= 100).length;
+      const total = ALL_BADGES.length;
+      const score = state.vitality + state.seasonLit * 30 + earned * 50;
+
+      return (
+        <div className="cq-screen-enter" style={{
+          flex: 1, overflowY:'auto', overflowX:'hidden',
+          padding: '8px 18px 24px', display:'flex', flexDirection:'column', gap: 14,
+        }} className="noscroll cq-screen-enter">
+          {/* tier card */}
+          <div style={{
+            background: `linear-gradient(135deg, #FAF5E6 0%, #F1E7C9 100%)`,
+            borderRadius: 22, padding: 16,
+            border: `1px solid ${T.line}`,
+            position:'relative', overflow:'hidden',
+          }}>
+            <div style={{
+              position:'absolute', right: -20, top: -20,
+              width: 140, height: 140, borderRadius: 999,
+              background: 'radial-gradient(circle, rgba(255,181,71,0.30) 0%, transparent 65%)',
+            }}/>
+            <div style={{display:'flex', alignItems:'center', gap: 12, position:'relative'}}>
+              <div style={{
+                width: 56, height: 56, borderRadius: 16,
+                background: T.brownDeep, color: T.lime,
+                display:'grid', placeItems:'center', flex:'0 0 auto',
+                boxShadow: '0 8px 16px rgba(20,18,12,0.20)',
+              }}>
+                <Ic.Trophy s={26} c={T.lime}/>
+              </div>
+              <div style={{flex: 1, minWidth: 0}}>
+                <div style={{display:'flex', alignItems:'center', gap: 6}}>
+                  <Pill tone="ink" size="xs">称号 · TIER 3</Pill>
+                  <span className="mono" style={{fontSize: 10, color: T.muted}}>S04</span>
+                </div>
+                <div className="display" style={{fontSize: 22, fontWeight: 600, color: T.ink, marginTop: 4, letterSpacing:'-0.01em'}}>
+                  湖畔学徒
+                </div>
+                <div style={{fontSize: 11.5, color: T.muted, marginTop: 1}}>
+                  距下个称号「湖畔守望者」还差 <span style={{color: T.coral, fontWeight: 600}} className="mono">320 分</span>
+                </div>
+              </div>
+              <div style={{textAlign:'right'}}>
+                <div style={{fontSize: 10, color: T.muted, letterSpacing:'0.06em'}} className="mono">SCORE</div>
+                <div className="mono display" style={{fontSize: 24, fontWeight: 700, color: T.ink, letterSpacing:'-0.02em'}}>
+                  <VitalityCounter value={score}/>
+                </div>
+              </div>
+            </div>
+            <div style={{
+              marginTop: 12, fontSize: 11.5, color: T.ink2, lineHeight: 1.5,
+              padding: '8px 11px', background: 'rgba(20,18,12,0.04)', borderRadius: 10,
+            }}>
+              <span style={{color: T.brownDeep, fontWeight: 600}}>你在校园里的每次行动</span>，都会沉淀成赛季称号、徽章与档案
+            </div>
+          </div>
+
+          {/* sub tabs */}
+          <div style={{
+            display:'flex', gap: 4, padding: 3,
+            background: T.surface, borderRadius: 12,
+            border: `1px solid ${T.line}`,
+          }}>
+            {[
+              {k:'badges', label:`徽章 · ${earned}/${total}`},
+              {k:'archive', label:'赛季档案'},
+            ].map(t => (
+              <button key={t.k} onClick={() => setTab(t.k)} style={{
+                flex: 1, padding: '8px 10px', borderRadius: 9,
+                background: tab === t.k ? T.brownDeep : 'transparent',
+                color: tab === t.k ? '#FFF' : T.muted,
+                fontSize: 12.5, fontWeight: 600,
+                transition:'all 200ms',
+              }}>{t.label}</button>
+            ))}
+          </div>
+
+          {tab === 'badges' && (
+            <Fragment>
+              {/* category tabs */}
+              <div style={{display:'flex', gap: 6, overflowX:'auto', paddingBottom: 2}} className="noscroll">
+                {[
+                  {k:'all', label:'全部'},
+                  {k:'season', label:'本赛季'},
+                  {k:'limited', label:'限定'},
+                  {k:'place', label:'地点', preview: false},
+                  {k:'event', label:'事件', preview: false},
+                ].map(t => (
+                  <button key={t.k} onClick={() => setFilter(t.k)} style={{
+                    padding: '5px 11px', borderRadius: 999,
+                    background: filter === t.k ? T.brownDeep : T.surface,
+                    color: filter === t.k ? '#FFF' : T.ink2,
+                    border: `1px solid ${filter === t.k ? T.brownDeep : T.line}`,
+                    fontSize: 12, fontWeight: 500,
+                    whiteSpace:'nowrap', flex:'0 0 auto',
+                    display:'flex', alignItems:'center', gap: 5,
+                  }}>{t.label}{t.preview && <Pill tone="ghost" size="xs">·</Pill>}</button>
+                ))}
+              </div>
+
+              <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap: 10}}>
+                {filtered.map(b => {
+                  const progress = state.badges[b.id] ?? BADGE_STATIC[b.id].baseProgress;
+                  const recent = state.recentBadges?.includes(b.id);
+                  return (
+                    <BadgeTile key={b.id} b={b} progress={progress} recent={recent}/>
+                  );
+                })}
+              </div>
+
+              <div style={{
+                marginTop: 6,
+                background: T.surface, borderRadius: 14,
+                border: `1px solid ${T.line}`, padding: '11px 14px',
+                fontSize: 11.5, color: T.muted, lineHeight: 1.5,
+                display:'flex', gap: 10, alignItems:'flex-start',
+              }}>
+                <Ic.Spark s={14} c={T.limeDeep}/>
+                <span>完成<b style={{color: T.ink}}>探索 · 恢复 · 组队</b>等校园任务，徽章与称号会在这里持续累积。本赛季限定徽章在 06.20 收摊</span>
+              </div>
+            </Fragment>
+          )}
+
+          {tab === 'archive' && (
+            <ArchivePane state={state} totalEarned={earned}/>
+          )}
+
+          <div style={{height: 8}}/>
+        </div>
+      );
+    }
+
+    /* ================================================================
+       APP
+    ================================================================ */
+    function App() {
+      const [screen, setScreen] = useState('home');
+      const [toasts, setToasts] = useState([]);
+      const [state, setState] = useState({
+        vitality: 280,
+        seasonLit: 14,
+        seasonTotal: 22,
+        litAreas: ['arts'],
+        onboardDismissed: false,
+        taskState: { t1:'idle', t2:'idle', t3:'idle' },
+        mapTaskState: { m1:'idle', m2:'idle', m3:'idle', m4:'idle', m5:'idle' },
+        playState: { p1:'idle', p2:'idle', p3:'idle', p4:'idle' },
+        badges: Object.fromEntries(Object.entries(BADGE_STATIC).map(([k, v]) => [k, v.baseProgress])),
+        recentBadges: [],
+      });
+
+      const pushToast = useCallback((toast) => {
+        const id = Math.random().toString(36).slice(2);
+        setToasts(t => [...t, {id, ...toast}]);
+        setTimeout(() => setToasts(t => t.filter(x => x.id !== id)), 2800);
+      }, []);
+
+      const bumpBadge = useCallback((badgeId, points) => {
+        if (!badgeId) return;
+        setState(s => ({
+          ...s,
+          badges: { ...s.badges, [badgeId]: Math.min(100, (s.badges[badgeId] ?? 0) + points) },
+          recentBadges: [...new Set([...(s.recentBadges || []), badgeId])],
+        }));
+      }, []);
+
+      const lightArea = useCallback((zone) => {
+        if (!zone) return;
+        setState(s => s.litAreas.includes(zone) ? s : ({
+          ...s,
+          litAreas: [...s.litAreas, zone],
+          seasonLit: Math.min(s.seasonTotal, s.seasonLit + 1),
+        }));
+      }, []);
+
+      const actions = useMemo(() => ({
+        toast: pushToast,
+        dismissOnboard: () => setState(s => ({ ...s, onboardDismissed: true })),
+        completeTask: (task) => {
+          setState(s => {
+            if (s.taskState[task.id] === 'completed') return s;
+            return {
+              ...s,
+              taskState: { ...s.taskState, [task.id]: 'completed' },
+              vitality: s.vitality + task.reward,
+            };
+          });
+          if (task.affectsBadge) bumpBadge(task.affectsBadge, task.badgePoints);
+          if (task.litArea) lightArea(task.litArea);
+          pushToast({
+            title: `任务完成 · +${task.reward} 活力`,
+            detail: task.litArea ? `点亮「${ZONE_BY_ID[task.litArea] || task.litArea}」 · 徽章已推进` : '徽章进度已推进',
+            tone:'dark', icon:'check',
+          });
+        },
+        startMapTask: (poi) => {
+          setState(s => ({
+            ...s,
+            mapTaskState: { ...s.mapTaskState, [poi.id]: 'inProgress' },
+          }));
+          pushToast({
+            title: `已开始 · ${poi.name}`,
+            detail: `${poi.method} · 预计 ${poi.duration}`,
+            tone:'dark', icon:'pin',
+          });
+        },
+        completeMapTask: (poi) => {
+          setState(s => ({
+            ...s,
+            mapTaskState: { ...s.mapTaskState, [poi.id]: 'completed' },
+            vitality: s.vitality + poi.reward,
+          }));
+          if (poi.affectsBadge) bumpBadge(poi.affectsBadge, poi.badgePoints);
+          if (poi.zone) lightArea(poi.zone);
+          pushToast({
+            title: `任务完成 · +${poi.reward} 活力`,
+            detail: `点亮「${ZONE_BY_ID[poi.zone] || poi.zone}」区域`,
+            tone:'dark', icon:'check',
+          });
+        },
+        joinPlay: (item) => {
+          setState(s => {
+            if (s.playState[item.id] === 'joined') return s;
+            return {
+              ...s,
+              playState: { ...s.playState, [item.id]: 'joined' },
+            };
+          });
+          if (item.affectsBadge) bumpBadge(item.affectsBadge, item.badgePoints);
+          pushToast({
+            title: `已加入 · ${item.title}`,
+            detail: `推进「春日共玩」徽章 · 等待开始`,
+            tone:'dark', icon:'group',
+          });
+        },
+      }), [pushToast, bumpBadge, lightArea]);
+
+      // clear "recent" highlight after a while
+      useEffect(() => {
+        if (!state.recentBadges?.length) return;
+        const t = setTimeout(() => setState(s => ({ ...s, recentBadges: [] })), 5500);
+        return () => clearTimeout(t);
+      }, [state.recentBadges]);
+
+      const Screen =
+        screen === 'home' ? <ScreenHome state={state} actions={actions} onJump={setScreen}/> :
+        screen === 'map'  ? <ScreenMap state={state} actions={actions}/> :
+        screen === 'play' ? <ScreenPlay state={state} actions={actions} onJump={setScreen}/> :
+                            <ScreenBadges state={state} actions={actions}/>;
+
+      return (
+        <div style={{
+          width:'100%', height:'100%',
+          display:'flex', flexDirection:'column',
+          background: T.bg, position:'relative',
+        }}>
+          <StatusBar tone="light"/>
+          <ToastHost toasts={toasts}/>
+          {Screen}
+          <TabBar active={screen} setActive={setScreen}/>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>

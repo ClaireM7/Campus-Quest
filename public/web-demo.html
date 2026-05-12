@@ -1,0 +1,1751 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Campus Quest · Web</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; height: 100%; }
+    body {
+      font-family: "Inter", "Noto Sans SC", system-ui, -apple-system, sans-serif;
+      background: #F1ECDF;
+      color: #15140F;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      min-height: 100vh;
+    }
+    .display { font-family: "Space Grotesk", "Noto Sans SC", sans-serif; letter-spacing: -0.02em; }
+    .mono    { font-family: "JetBrains Mono", ui-monospace, monospace; font-feature-settings: "tnum"; }
+    button { font-family: inherit; cursor: pointer; border: 0; background: transparent; padding: 0; color: inherit; }
+    a { color: inherit; text-decoration: none; }
+    input { font-family: inherit; }
+
+    .noscroll::-webkit-scrollbar { display: none; }
+    .noscroll { scrollbar-width: none; -ms-overflow-style: none; }
+
+    /* custom scroll */
+    .softscroll::-webkit-scrollbar { width: 10px; height: 10px; }
+    .softscroll::-webkit-scrollbar-track { background: transparent; }
+    .softscroll::-webkit-scrollbar-thumb { background: rgba(20,18,12,0.10); border-radius: 8px; border: 2px solid transparent; background-clip: padding-box; }
+    .softscroll::-webkit-scrollbar-thumb:hover { background: rgba(20,18,12,0.18); border: 2px solid transparent; background-clip: padding-box; }
+
+    @keyframes cq-fade-up { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes cq-toast-in { from { opacity: 0; transform: translateY(-12px) scale(0.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
+    @keyframes cq-pop { 0% { transform: scale(1); } 50% { transform: scale(1.18); } 100% { transform: scale(1); } }
+    @keyframes cq-pulse { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }
+    @keyframes cq-glow { 0%, 100% { box-shadow: 0 0 0 0 rgba(201,242,62,0); } 50% { box-shadow: 0 0 0 6px rgba(201,242,62,0.18); } }
+    .cq-pop { animation: cq-pop 480ms cubic-bezier(.4,1.4,.6,1); }
+    .cq-fade-up { animation: cq-fade-up 320ms ease-out both; }
+    .cq-screen-enter { animation: cq-fade-up 280ms ease-out both; }
+
+    .cq-card-hover { transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease; }
+    .cq-card-hover:hover { transform: translateY(-2px); box-shadow: 0 12px 24px rgba(20,18,12,0.10); }
+
+    .cq-btn-pri:hover { background: #1F1D14 !important; }
+    .cq-btn-sec:hover { background: #EBE3CB !important; }
+    .cq-link:hover { color: #15140F !important; }
+
+    .cq-nav-item { transition: background 180ms, color 180ms; }
+    .cq-nav-item:hover { background: rgba(20,18,12,0.04); color: #15140F !important; }
+
+    @media (max-width: 1180px) {
+      .cq-grid-3 { grid-template-columns: 1fr 1fr !important; }
+      .cq-side-rail { display: none !important; }
+    }
+    @media (max-width: 880px) {
+      .cq-shell { grid-template-columns: 72px 1fr !important; }
+      .cq-nav-text { display: none !important; }
+      .cq-side-card { display: none !important; }
+    }
+  </style>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.25.6/babel.min.js" crossorigin="anonymous"></script>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel" data-presets="env,react">
+    const { useState, useEffect, useRef, useMemo, useCallback, createContext, useContext, Fragment } = React;
+
+    /* TOKENS */
+    const T = {
+      bg: '#F1ECDF', bg2: '#E8E0CA',
+      ink: '#15140F', ink2: '#3A382E',
+      muted: '#736B57', subtle: '#A89E82',
+      surface: '#FFFDF7', card: '#FAF5E6', cardAlt: '#EFE8D2',
+      line: '#DCD3B8', lineSoft: '#E8DFC4',
+      lime: '#C9F23E', limeDeep: '#7FA01F',
+      coral: '#FF6A3D', amber: '#FFB547',
+      blue: '#5B8DF6', green: '#4A8050',
+      water: '#9DC8DC', brown: '#2A2820', brownDeep: '#15140F',
+    };
+
+    /* ICONS (same set as mobile) */
+    const Ic = {
+      Home: ({s=20,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 11l8-7 8 7v8a2 2 0 0 1-2 2h-3v-6h-6v6H6a2 2 0 0 1-2-2v-8z"/></svg>,
+      Map: ({s=20,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2V6z"/><path d="M9 4v16M15 6v16"/></svg>,
+      Play: ({s=20,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="9" r="3.5"/><circle cx="17" cy="11" r="2.5"/><path d="M3 20c1-3 3.5-4.5 6-4.5s5 1.5 6 4.5"/><path d="M14 19c0.6-2.2 2.2-3.5 4-3.5"/></svg>,
+      Badge: ({s=20,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3l2.5 2.5L18 5l1 3.5L21.5 11 19 13.5 18 17l-3.5-.5L12 19l-2.5-2.5L6 17l-1-3.5L2.5 11 5 8.5 6 5l3.5.5L12 3z"/><path d="M9 11l2.5 2.5L15 10"/></svg>,
+      Spark: ({s=14,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill={c}><path d="M12 2l1.8 5.4L19 9l-5.2 1.6L12 16l-1.8-5.4L5 9l5.2-1.6L12 2zm6 11l1 3 3 1-3 1-1 3-1-3-3-1 3-1 1-3z"/></svg>,
+      Flame: ({s=14,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill={c}><path d="M12 2s5 4 5 9a5 5 0 1 1-10 0c0-2 1-3 2-4-1 3 2 4 2 4s-2-3 1-9z"/></svg>,
+      Clock: ({s=14,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>,
+      Walk: ({s=16,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="13" cy="4" r="1.6"/><path d="M9 21l3-7 3 3 3 1"/><path d="M5 13l3-3 3 1 2 3"/></svg>,
+      Run: ({s=16,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="14" cy="4" r="1.6"/><path d="M5 21l4-6-2-3 4-3 3 3 3 1"/><path d="M14 9l-2 5"/></svg>,
+      Stretch: ({s=16,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="4" r="1.7"/><path d="M5 10l4-2 3 1 3-1 4 2"/><path d="M9 9l1 6-2 5"/><path d="M15 9l-1 6 2 5"/></svg>,
+      Group: ({s=16,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="9" r="3"/><circle cx="17" cy="10" r="2.4"/><path d="M3 19c.8-3 3-4.5 6-4.5s5.2 1.5 6 4.5"/><path d="M15 19c.5-2 2-3 3.5-3"/></svg>,
+      Compass: ({s=16,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5 5-2z"/></svg>,
+      ArrowR: ({s=16,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>,
+      Plus: ({s=14,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2.4" strokeLinecap="round"><path d="M12 5v14M5 12h14"/></svg>,
+      Check: ({s=14,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l5 5 9-11"/></svg>,
+      Close: ({s=14,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>,
+      Bell: ({s=18,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M6 16l-1 2h14l-1-2V11a6 6 0 1 0-12 0v5z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg>,
+      Search: ({s=16,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/></svg>,
+      Pin: ({s=16,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s7-7.5 7-13a7 7 0 1 0-14 0c0 5.5 7 13 7 13z"/><circle cx="12" cy="9" r="2.5"/></svg>,
+      Lock: ({s=14,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 1 1 8 0v3"/></svg>,
+      Filter: ({s=14,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 5h16l-6 8v6l-4-2v-4L4 5z"/></svg>,
+      Layers: ({s=14,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 13l9 5 9-5"/></svg>,
+      ChevDown: ({s=14,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6"/></svg>,
+      ChevR: ({s=14,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6"/></svg>,
+      Trophy: ({s=18,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M7 4h10v4a5 5 0 0 1-10 0V4z"/><path d="M5 6H3v2a3 3 0 0 0 3 3M19 6h2v2a3 3 0 0 1-3 3"/><path d="M10 14h4v3l1 3H9l1-3v-3z"/></svg>,
+      Lightning: ({s=14,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill={c}><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z"/></svg>,
+      Settings: ({s=18,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.7" strokeLinecap="round"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.4-2.3.9a7 7 0 0 0-2-1.2L14 3h-4l-.6 2.6a7 7 0 0 0-2 1.2l-2.3-.9-2 3.4 2 1.5A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.5 2 3.4 2.3-.9a7 7 0 0 0 2 1.2L10 21h4l.6-2.6a7 7 0 0 0 2-1.2l2.3.9 2-3.4-2-1.5c.1-.4.1-.8.1-1.2z"/></svg>,
+    };
+
+    /* TOAST */
+    function ToastHost({toasts}) {
+      return (
+        <div style={{
+          position:'fixed', top: 24, right: 24, zIndex: 100,
+          display:'flex', flexDirection:'column', gap: 8, pointerEvents:'none',
+        }}>
+          {toasts.map(t => (
+            <div key={t.id}
+              style={{
+                animation: 'cq-toast-in 240ms cubic-bezier(.2,1,.4,1) both',
+                background: T.brownDeep, color: '#FFF',
+                borderRadius: 14, padding: '12px 14px',
+                boxShadow: '0 16px 36px rgba(20,18,12,0.28), 0 2px 4px rgba(20,18,12,0.10)',
+                display:'flex', alignItems:'center', gap: 10,
+                fontSize: 13, fontWeight: 500, minWidth: 280,
+              }}>
+              <div style={{
+                width: 24, height: 24, borderRadius: 99,
+                background: T.lime, color: T.brownDeep,
+                display:'grid', placeItems:'center', flex:'0 0 auto',
+              }}>
+                {t.icon === 'check' ? <Ic.Check s={13} c={T.brownDeep}/> :
+                 t.icon === 'group' ? <Ic.Group s={13} c={T.brownDeep}/> :
+                 t.icon === 'pin' ? <Ic.Pin s={13} c={T.brownDeep}/> :
+                 <Ic.Spark s={13} c={T.brownDeep}/>}
+              </div>
+              <div style={{flex: 1, minWidth: 0}}>
+                <div style={{fontWeight: 600}}>{t.title}</div>
+                {t.detail && <div style={{fontSize: 11.5, color:'rgba(255,255,255,0.6)', marginTop: 2}}>{t.detail}</div>}
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    /* PRIMITIVES */
+    function Pill({children, tone='neutral', size='sm', icon}) {
+      const tones = {
+        neutral: { bg: T.cardAlt, fg: T.ink2 },
+        ink: { bg: T.brownDeep, fg: T.lime },
+        lime: { bg: T.lime, fg: T.brownDeep },
+        coral: { bg: '#FFE7DD', fg: '#B74519' },
+        amber: { bg: '#FFF1D6', fg: '#8C5A00' },
+        green: { bg: '#E5EFD7', fg: '#3F5E1F' },
+        blue: { bg: '#E2ECFC', fg: '#274A95' },
+        ghost: { bg: 'transparent', fg: T.muted, bd: T.line },
+      };
+      const t = tones[tone] || tones.neutral;
+      const pad = size === 'xs' ? '2px 8px' : size === 'lg' ? '6px 12px' : '4px 10px';
+      const fs = size === 'xs' ? 10 : size === 'lg' ? 12 : 11;
+      return (
+        <span style={{
+          display:'inline-flex', alignItems:'center', gap: 4,
+          background: t.bg, color: t.fg,
+          border: t.bd ? `1px solid ${t.bd}` : 'none',
+          padding: pad, borderRadius: 999,
+          fontSize: fs, fontWeight: 600, letterSpacing: '0.02em',
+          lineHeight: 1, whiteSpace: 'nowrap',
+        }}>
+          {icon}{children}
+        </span>
+      );
+    }
+
+    function Counter({value}) {
+      const [display, setDisplay] = useState(value);
+      const prev = useRef(value);
+      const [pop, setPop] = useState(false);
+      useEffect(() => {
+        if (value === prev.current) return;
+        const start = prev.current, end = value, dur = 600, t0 = performance.now();
+        let raf;
+        const tick = (t) => {
+          const p = Math.min(1, (t - t0) / dur);
+          const eased = 1 - Math.pow(1 - p, 3);
+          setDisplay(Math.round(start + (end - start) * eased));
+          if (p < 1) raf = requestAnimationFrame(tick); else prev.current = end;
+        };
+        raf = requestAnimationFrame(tick);
+        setPop(true);
+        const tm = setTimeout(() => setPop(false), 480);
+        return () => { cancelAnimationFrame(raf); clearTimeout(tm); };
+      }, [value]);
+      return <span className={pop ? 'cq-pop' : ''} style={{display:'inline-block'}}>{display}</span>;
+    }
+
+    /* SIDEBAR */
+    function Sidebar({active, setActive, state}) {
+      const items = [
+        { k:'home', label:'首页', en:'Home', Icon: Ic.Home },
+        { k:'map', label:'地图', en:'Map', Icon: Ic.Map },
+        { k:'play', label:'共玩', en:'Co-Play', Icon: Ic.Play },
+        { k:'badges', label:'徽章', en:'Badges', Icon: Ic.Badge },
+      ];
+      const pct = Math.round((state.seasonLit / state.seasonTotal) * 100);
+      return (
+        <aside style={{
+          background: T.surface,
+          borderRight: `1px solid ${T.line}`,
+          display:'flex', flexDirection:'column',
+          padding: '24px 14px',
+          height: '100vh', position:'sticky', top: 0,
+        }}>
+          {/* Logo */}
+          <div style={{display:'flex', alignItems:'center', gap: 10, padding: '0 6px 4px'}}>
+            <div style={{
+              width: 36, height: 36, borderRadius: 11,
+              background: T.brownDeep, color: T.lime,
+              display:'grid', placeItems:'center',
+              fontFamily:'"Space Grotesk"', fontWeight: 700, fontSize: 15,
+              letterSpacing:'-0.04em',
+            }}>CQ</div>
+            <div className="cq-nav-text">
+              <div className="display" style={{fontSize: 14, fontWeight: 600, color: T.ink, lineHeight: 1.1}}>Campus Quest</div>
+              <div style={{fontSize: 10, color: T.muted, letterSpacing:'0.10em', marginTop: 1}} className="mono">S04 · LAKESIDE SPRING</div>
+            </div>
+          </div>
+
+          {/* Nav */}
+          <nav style={{display:'flex', flexDirection:'column', gap: 2, marginTop: 28}}>
+            <div className="cq-nav-text" style={{fontSize: 10, color: T.subtle, letterSpacing:'0.12em', padding: '0 6px 6px'}} >
+              <span className="mono">NAVIGATION</span>
+            </div>
+            {items.map(it => {
+              const on = active === it.k;
+              return (
+                <button key={it.k} onClick={() => setActive(it.k)}
+                  className="cq-nav-item"
+                  style={{
+                    display:'flex', alignItems:'center', gap: 10,
+                    padding: '10px 12px', borderRadius: 10,
+                    background: on ? T.brownDeep : 'transparent',
+                    color: on ? '#FFF' : T.ink2,
+                    textAlign:'left', fontSize: 13.5, fontWeight: on ? 600 : 500,
+                    position:'relative',
+                  }}>
+                  <it.Icon s={18} c={on ? T.lime : T.ink2}/>
+                  <span className="cq-nav-text" style={{flex: 1}}>{it.label}</span>
+                  {on && <span className="cq-nav-text" style={{
+                    fontSize: 10, color:'rgba(255,255,255,0.45)', letterSpacing:'0.10em'
+                  }} className="mono">{it.en.toUpperCase()}</span>}
+                </button>
+              );
+            })}
+          </nav>
+
+          {/* Season mini-card */}
+          <div className="cq-side-card" style={{
+            marginTop: 24,
+            background: `linear-gradient(160deg, ${T.brownDeep} 0%, #2A2620 100%)`,
+            color:'#FFF', borderRadius: 14, padding: 14,
+            border:`1px solid ${T.brownDeep}`,
+            position:'relative', overflow:'hidden',
+          }}>
+            <div style={{
+              position:'absolute', top: -20, right: -20, width: 80, height: 80, borderRadius: 99,
+              background: 'radial-gradient(circle, rgba(201,242,62,0.20) 0%, transparent 60%)',
+            }}/>
+            <div style={{display:'flex', alignItems:'center', gap: 5, marginBottom: 8, position:'relative'}}>
+              <Ic.Spark s={11} c={T.lime}/>
+              <span style={{fontSize: 10, color: T.lime, letterSpacing:'0.12em', fontWeight: 700}} className="mono">SEASON</span>
+            </div>
+            <div className="display" style={{fontSize: 13, fontWeight: 600, lineHeight: 1.2}}>
+              湖畔之春
+            </div>
+            <div style={{display:'flex', alignItems:'baseline', gap: 4, marginTop: 6}}>
+              <span className="mono" style={{fontSize: 18, fontWeight: 700, color: T.lime}}><Counter value={state.seasonLit}/></span>
+              <span style={{fontSize: 11, color:'rgba(255,255,255,0.45)'}} className="mono">/{state.seasonTotal} 区域</span>
+            </div>
+            <div style={{height: 4, background:'rgba(255,255,255,0.10)', borderRadius: 99, marginTop: 8, overflow:'hidden'}}>
+              <div style={{width: pct+'%', height:'100%', background: T.lime, transition:'width 600ms'}}/>
+            </div>
+            <div style={{fontSize: 10, color:'rgba(255,255,255,0.45)', marginTop: 6}}>距 06.20 收摊还有 41 天</div>
+          </div>
+
+          {/* spacer */}
+          <div style={{flex: 1}}/>
+
+          {/* User card */}
+          <div style={{
+            background: T.cardAlt, borderRadius: 12, padding: 10,
+            display:'flex', alignItems:'center', gap: 10,
+            border:`1px solid ${T.lineSoft}`,
+          }}>
+            <div style={{
+              width: 32, height: 32, borderRadius: 99,
+              background: 'linear-gradient(135deg, #FFB547, #FF6A3D)',
+              color:'#FFF', display:'grid', placeItems:'center',
+              fontWeight: 700, fontSize: 13, fontFamily:'"Space Grotesk"',
+              flex:'0 0 auto',
+            }}>毛</div>
+            <div className="cq-nav-text" style={{flex: 1, minWidth: 0}}>
+              <div style={{fontSize: 12.5, fontWeight: 600, color: T.ink}}>毛柯兰 · @keilan</div>
+              <div style={{fontSize: 10.5, color: T.muted}}>湖畔学徒 · TIER 3</div>
+            </div>
+            <button className="cq-nav-text" style={{padding: 6, borderRadius: 8}}>
+              <Ic.Settings s={15} c={T.muted}/>
+            </button>
+          </div>
+        </aside>
+      );
+    }
+
+    /* TOPBAR */
+    function TopBar({state, screen}) {
+      const titles = {
+        home:{t:'首页', s:'今日任务 · 赛季概览'},
+        map:{t:'地图', s:'校园点位 · 任务路线'},
+        play:{t:'共玩', s:'附近的轻协作挑战'},
+        badges:{t:'徽章 & 档案', s:'你这赛季的沉淀'},
+      };
+      const cur = titles[screen];
+      return (
+        <header style={{
+          padding: '20px 32px',
+          background:'rgba(241,236,223,0.85)',
+          backdropFilter:'saturate(140%) blur(8px)',
+          borderBottom: `1px solid ${T.lineSoft}`,
+          display:'flex', alignItems:'center', justifyContent:'space-between', gap: 16,
+          position:'sticky', top: 0, zIndex: 20,
+        }}>
+          <div style={{display:'flex', alignItems:'baseline', gap: 12}}>
+            <div className="display" style={{fontSize: 22, fontWeight: 600, color: T.ink, letterSpacing:'-0.01em'}}>
+              {cur.t}
+            </div>
+            <div style={{fontSize: 12.5, color: T.muted}}>{cur.s}</div>
+          </div>
+          <div style={{display:'flex', alignItems:'center', gap: 10}}>
+            <div style={{
+              display:'flex', alignItems:'center', gap: 8,
+              background: T.surface, border:`1px solid ${T.line}`,
+              padding: '7px 12px', borderRadius: 999,
+            }}>
+              <Ic.Lightning s={13} c={T.limeDeep}/>
+              <span className="mono" style={{fontSize: 13, fontWeight: 700, color: T.ink}}><Counter value={state.vitality}/></span>
+              <span style={{fontSize: 10, color: T.muted, letterSpacing:'0.08em'}} className="mono">VITALITY</span>
+            </div>
+            <div style={{
+              display:'flex', alignItems:'center', gap: 6,
+              background: T.surface, border:`1px solid ${T.line}`,
+              padding: '7px 12px', borderRadius: 999,
+            }}>
+              <Ic.Flame s={13} c={T.coral}/>
+              <span className="mono" style={{fontSize: 13, fontWeight: 700, color: T.ink}}>14</span>
+              <span style={{fontSize: 10, color: T.muted, letterSpacing:'0.08em'}} className="mono">天连续</span>
+            </div>
+            <button style={{
+              width: 36, height: 36, borderRadius: 99,
+              background: T.surface, border:`1px solid ${T.line}`,
+              display:'grid', placeItems:'center', position:'relative',
+            }} className="cq-card-hover">
+              <Ic.Bell s={16} c={T.ink2}/>
+              <span style={{position:'absolute', top: 8, right: 9, width: 7, height: 7, borderRadius: 99, background: T.coral, border: `1.5px solid ${T.surface}`}}/>
+            </button>
+          </div>
+        </header>
+      );
+    }
+
+    /* ================================================================
+       HOME (WEB)
+    ================================================================ */
+    const HOME_TASKS = [
+      { id:'t1', kind:'explore', recommended:true, title:'黄昏湖畔环线', sub:'Beebe Lake · 1 圈 ≈ 1.6 km',
+        tag:'探索 · 步行', badge:'推荐开始', duration:'约 25 分钟', method:'步行 · 任意配速',
+        reward: 45, rewardLine:'+45 活力 · 推进「湖畔探索 · I」 · 点亮西坡区域',
+        Icon: Ic.Walk, accent:'#5B8DF6', accentSoft:'#E2ECFC',
+        desc:'沿着 Beebe Lake 走一圈。途经樱花步道与水坝观景台，是开启赛季最轻量的方式。',
+        affectsBadge:'lake', badgePoints: 25, litArea:'beebe' },
+      { id:'t2', kind:'recovery', title:'10 分钟拉伸恢复', sub:'宿舍 / 任意安静角落',
+        tag:'恢复 · 拉伸', duration:'约 10 分钟', method:'拉伸 · 跟随节奏',
+        reward: 20, rewardLine:'+20 活力 · 推进「修复者」徽章',
+        Icon: Ic.Stretch, accent:'#7FA01F', accentSoft:'#E5EFD7',
+        desc:'4 个核心动作循环 2 轮。睡前完成最佳，不打卡也能记录。',
+        affectsBadge:'recover', badgePoints: 30 },
+      { id:'t3', kind:'training', title:'Libe Slope 上下三趟', sub:'Libe Slope · 坡度训练',
+        tag:'训练 · 高强度', duration:'约 18 分钟', method:'快走 / 慢跑',
+        reward: 60, rewardLine:'+60 活力 · 推进「坡道征服者」 · 点亮中坡区域',
+        Icon: Ic.Run, accent:'#FF6A3D', accentSoft:'#FFE7DD',
+        desc:'从 Libe Slope 底部到 McGraw Tower 来回三次。配速自定，重在完成。',
+        affectsBadge:'slope', badgePoints: 35, litArea:'slope' },
+    ];
+
+    function TaskRow({task, state, onComplete}) {
+      const completed = state.taskState[task.id] === 'completed';
+      const [open, setOpen] = useState(task.recommended);
+      return (
+        <div className="cq-card-hover" style={{
+          background: completed ? T.cardAlt : T.surface,
+          border: `1px solid ${task.recommended && !completed ? T.brownDeep : T.line}`,
+          borderRadius: 18, padding: 16,
+          opacity: completed ? 0.78 : 1,
+          position:'relative',
+        }}>
+          {task.recommended && !completed && (
+            <div style={{
+              position:'absolute', top: -10, left: 16,
+              background: T.brownDeep, color: T.lime,
+              padding: '4px 10px', borderRadius: 999,
+              fontSize: 10, fontWeight: 700, letterSpacing:'0.10em',
+              display:'flex', alignItems:'center', gap: 5,
+            }} className="mono">
+              <Ic.Spark s={10} c={T.lime}/> {task.badge}
+            </div>
+          )}
+          <div style={{display:'flex', alignItems:'flex-start', gap: 14}}>
+            <div style={{
+              width: 56, height: 56, borderRadius: 14,
+              background: completed ? '#E5EFD7' : task.accentSoft,
+              display:'grid', placeItems:'center', flex:'0 0 auto',
+            }}>
+              {completed ? <Ic.Check s={26} c={T.green}/> : <task.Icon s={28} c={task.accent}/>}
+            </div>
+            <div style={{flex: 1, minWidth: 0}}>
+              <div style={{display:'flex', alignItems:'center', gap: 8, marginBottom: 4, flexWrap:'wrap'}}>
+                <Pill tone="ghost" size="xs">{task.tag}</Pill>
+                <span style={{fontSize: 11, color: T.muted}} className="mono">{task.duration} · {task.method}</span>
+                {completed && <Pill tone="green" size="xs" icon={<Ic.Check s={9}/>}>已完成</Pill>}
+              </div>
+              <div className="display" style={{
+                fontSize: 18, fontWeight: 600, color: T.ink,
+                textDecoration: completed ? 'line-through' : 'none',
+                textDecorationColor: T.subtle,
+              }}>{task.title}</div>
+              <div style={{fontSize: 13, color: T.muted, marginTop: 2}}>{task.sub}</div>
+              {open && (
+                <div className="cq-fade-up" style={{marginTop: 10, fontSize: 13, color: T.ink2, lineHeight: 1.55}}>
+                  {task.desc}
+                </div>
+              )}
+              {open && (
+                <div className="cq-fade-up" style={{
+                  marginTop: 10, padding: '9px 12px',
+                  background: 'rgba(201,242,62,0.18)', borderRadius: 10,
+                  fontSize: 12, color: T.ink2,
+                  display:'flex', alignItems:'center', gap: 6,
+                }}>
+                  <Ic.Lightning s={12} c={T.limeDeep}/>{task.rewardLine}
+                </div>
+              )}
+            </div>
+            <div style={{display:'flex', flexDirection:'column', gap: 8, flex:'0 0 auto'}}>
+              {!completed ? (
+                <button onClick={onComplete} className="cq-btn-pri" style={{
+                  background: T.brownDeep, color:'#FFF',
+                  padding:'10px 16px', borderRadius: 12,
+                  fontSize: 13, fontWeight: 600,
+                  display:'flex', alignItems:'center', gap: 6, whiteSpace:'nowrap',
+                }}>
+                  <Ic.Check s={13} c={T.lime}/> 完成 · +{task.reward}
+                </button>
+              ) : (
+                <span style={{
+                  padding:'10px 16px', borderRadius: 12,
+                  background: T.cardAlt, color: T.muted,
+                  fontSize: 12, fontWeight: 500, whiteSpace:'nowrap',
+                }}>明天再来 ✦</span>
+              )}
+              <button onClick={() => setOpen(!open)} style={{
+                padding:'8px 12px', borderRadius: 12,
+                background: T.cardAlt, color: T.muted,
+                fontSize: 11, fontWeight: 500,
+                display:'flex', alignItems:'center', justifyContent:'center', gap: 4,
+              }}>
+                {open ? '收起' : '详情'}
+                <Ic.ChevDown s={11} c={T.muted} style={{transform: open ? 'rotate(180deg)' : ''}}/>
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function OnboardCard({dismissed, onDismiss, onJump}) {
+      if (dismissed) return null;
+      const steps = [
+        { n:1, t:'在首页完成一个今日任务', d:'最快体验任务系统', tab:null },
+        { n:2, t:'去地图页点开校园点位', d:'查看任务详情并开始', tab:'map' },
+        { n:3, t:'在共玩页加入临时组队', d:'体验轻社交联动', tab:'play' },
+        { n:4, t:'在徽章页查看进度变化', d:'观察行为如何沉淀', tab:'badges' },
+      ];
+      return (
+        <div style={{
+          background: T.brownDeep, color:'#FFF',
+          borderRadius: 18, padding: 18,
+          position:'relative', overflow:'hidden',
+        }} className="cq-fade-up">
+          <div style={{
+            position:'absolute', right: -40, top: -40,
+            width: 180, height: 180, borderRadius: 99,
+            background:'radial-gradient(circle, rgba(201,242,62,0.18) 0%, transparent 60%)',
+          }}/>
+          <div style={{position:'relative', display:'flex', justifyContent:'space-between', marginBottom: 12}}>
+            <div>
+              <div style={{display:'flex', alignItems:'center', gap: 6, marginBottom: 4}}>
+                <span style={{fontSize: 10, fontWeight: 700, letterSpacing:'0.16em', color: T.lime}} className="mono">TRY THIS DEMO</span>
+                <span style={{width: 4, height: 4, background:'rgba(255,255,255,0.3)', borderRadius:99}}/>
+                <span style={{fontSize: 10, color:'rgba(255,255,255,0.5)', letterSpacing:'0.08em'}} className="mono">2 MIN · 4 STEPS</span>
+              </div>
+              <div className="display" style={{fontSize: 18, fontWeight: 600, lineHeight: 1.25}}>推荐试玩顺序</div>
+              <div style={{fontSize: 12, color:'rgba(255,255,255,0.6)', marginTop: 3}}>
+                按下面 4 步即可走通核心闭环
+              </div>
+            </div>
+            <button onClick={onDismiss} style={{
+              width: 28, height: 28, borderRadius: 99,
+              background:'rgba(255,255,255,0.08)', border:'1px solid rgba(255,255,255,0.12)',
+              display:'grid', placeItems:'center', flex:'0 0 auto',
+            }}>
+              <Ic.Close s={12} c="rgba(255,255,255,0.7)"/>
+            </button>
+          </div>
+          <div style={{position:'relative', display:'flex', flexDirection:'column', gap: 6}}>
+            {steps.map((s, i) => (
+              <button key={s.n} onClick={() => s.tab && onJump?.(s.tab)} style={{
+                display:'flex', alignItems:'center', gap: 11,
+                padding: '9px 11px', borderRadius: 11,
+                background: i === 0 ? 'rgba(201,242,62,0.10)' : 'rgba(255,255,255,0.04)',
+                border: i === 0 ? '1px solid rgba(201,242,62,0.32)' : '1px solid rgba(255,255,255,0.06)',
+                textAlign:'left', cursor: s.tab ? 'pointer' : 'default',
+              }}>
+                <span style={{
+                  width: 22, height: 22, borderRadius:99,
+                  background: i === 0 ? T.lime : 'rgba(255,255,255,0.12)',
+                  color: i === 0 ? T.brownDeep : '#FFF',
+                  display:'grid', placeItems:'center',
+                  fontSize: 11, fontWeight: 700, flex:'0 0 auto',
+                }} className="mono">{s.n}</span>
+                <span style={{flex: 1}}>
+                  <div style={{fontSize: 13, fontWeight: 500, color:'#FFF'}}>{s.t}</div>
+                  <div style={{fontSize: 11, color:'rgba(255,255,255,0.5)', marginTop: 1}}>{s.d}</div>
+                </span>
+                {s.tab && <Ic.ChevR s={12} c="rgba(255,255,255,0.4)"/>}
+              </button>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    function ScreenHome({state, actions, onJump}) {
+      const pct = Math.round((state.seasonLit / state.seasonTotal) * 100);
+      return (
+        <div className="cq-screen-enter" style={{padding:'24px 32px 40px'}}>
+          {/* Hero strip */}
+          <div style={{
+            display:'grid', gridTemplateColumns:'1.6fr 1fr', gap: 18, marginBottom: 22,
+          }}>
+            {/* Season hero */}
+            <div style={{
+              background:`linear-gradient(135deg, ${T.brownDeep} 0%, #1F1D14 60%, #2A2820 100%)`,
+              color:'#FFF', borderRadius: 22, padding: 28,
+              border:`1px solid ${T.brownDeep}`,
+              boxShadow:'0 16px 40px rgba(20,18,12,0.20)',
+              position:'relative', overflow:'hidden',
+              minHeight: 200,
+            }}>
+              <div style={{
+                position:'absolute', top: -60, right: -40,
+                width: 280, height: 280, borderRadius: 99,
+                background:'radial-gradient(circle, rgba(201,242,62,0.20) 0%, transparent 60%)',
+              }}/>
+              <div style={{position:'relative'}}>
+                <div style={{display:'flex', alignItems:'center', gap: 8, marginBottom: 8}}>
+                  <span style={{
+                    background:'rgba(201,242,62,0.18)', color: T.lime,
+                    padding:'3px 10px', borderRadius:99,
+                    fontSize: 10, fontWeight: 700, letterSpacing:'0.12em',
+                  }} className="mono">SEASON · S04</span>
+                  <span style={{fontSize: 11, color:'rgba(255,255,255,0.5)'}} className="mono">04.10 → 06.20 · ITHACA, NY</span>
+                </div>
+                <div className="display" style={{fontSize: 38, fontWeight: 600, letterSpacing:'-0.02em', lineHeight: 1.1}}>
+                  湖畔之春 · Lakeside Spring
+                </div>
+                <div style={{fontSize: 14, color:'rgba(255,255,255,0.62)', marginTop: 8, lineHeight: 1.45, maxWidth: 480}}>
+                  把真实校园空间变成赛季任务、地图探索与轻协作挑战
+                </div>
+                <div style={{display:'flex', gap: 32, marginTop: 24, alignItems:'flex-end'}}>
+                  <div>
+                    <div style={{fontSize: 10, color:'rgba(255,255,255,0.5)', letterSpacing:'0.10em'}} className="mono">ACTIVE VITALITY</div>
+                    <div className="display mono" style={{fontSize: 44, fontWeight: 700, color: T.lime, letterSpacing:'-0.04em', lineHeight: 1}}>
+                      <Counter value={state.vitality}/>
+                    </div>
+                    <div style={{fontSize: 11, color:'rgba(255,255,255,0.45)', marginTop: 4}}>
+                      距下一档奖励还差 {Math.max(0, 320 - state.vitality)}
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{fontSize: 10, color:'rgba(255,255,255,0.5)', letterSpacing:'0.10em'}} className="mono">SEASON LIT</div>
+                    <div className="display mono" style={{fontSize: 44, fontWeight: 700, color:'#FFF', letterSpacing:'-0.04em', lineHeight: 1}}>
+                      <Counter value={state.seasonLit}/><span style={{color:'rgba(255,255,255,0.4)', fontSize: 24}}>/{state.seasonTotal}</span>
+                    </div>
+                    <div style={{fontSize: 11, color:'rgba(255,255,255,0.45)', marginTop: 4}}>
+                      区域已点亮 · {pct}%
+                    </div>
+                  </div>
+                  <div style={{flex: 1, minWidth: 100, alignSelf:'center'}}>
+                    <div style={{height: 6, background:'rgba(255,255,255,0.10)', borderRadius:99, overflow:'hidden'}}>
+                      <div style={{width: pct+'%', height:'100%', background:`linear-gradient(90deg, ${T.lime}, #E0FF7A)`, transition:'width 600ms', borderRadius: 99}}/>
+                    </div>
+                    <div style={{display:'flex', justifyContent:'space-between', marginTop: 6, fontSize: 10, color:'rgba(255,255,255,0.45)'}} className="mono">
+                      <span>S04 · DAY 14</span><span>D-41</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Onboard */}
+            <OnboardCard dismissed={state.onboardDismissed} onDismiss={actions.dismissOnboard} onJump={onJump}/>
+          </div>
+
+          {/* main 2col */}
+          <div style={{display:'grid', gridTemplateColumns:'1fr 320px', gap: 18}} className="cq-grid-3">
+            {/* Tasks */}
+            <div>
+              <div style={{display:'flex', alignItems:'baseline', justifyContent:'space-between', marginBottom: 14}}>
+                <div>
+                  <div className="display" style={{fontSize: 20, fontWeight: 600, color: T.ink}}>
+                    今日任务
+                  </div>
+                  <div style={{fontSize: 13, color: T.muted, marginTop: 2}}>
+                    为你挑选了 3 件小事 · <span style={{color: T.blue}}>探索</span> · <span style={{color: T.green}}>恢复</span> · <span style={{color: T.coral}}>训练</span>
+                  </div>
+                </div>
+                <button className="cq-link" style={{fontSize: 12, color: T.muted, display:'flex', alignItems:'center', gap: 4}}>
+                  全部任务 <Ic.ArrowR s={11} c={T.muted}/>
+                </button>
+              </div>
+
+              <div style={{display:'flex', flexDirection:'column', gap: 14}}>
+                {HOME_TASKS.map(task => (
+                  <TaskRow key={task.id} task={task} state={state} onComplete={() => actions.completeTask(task)}/>
+                ))}
+              </div>
+
+              {/* Activity timeline */}
+              <div style={{marginTop: 24}}>
+                <div className="display" style={{fontSize: 16, fontWeight: 600, color: T.ink, marginBottom: 12}}>
+                  最近发生
+                </div>
+                <div style={{
+                  background: T.surface, borderRadius: 16,
+                  border:`1px solid ${T.line}`, padding: '6px 0',
+                }}>
+                  {[
+                    { t:'昨天 · 18:42', a:'完成「黄昏湖畔环线」·点亮西坡', icon: Ic.Pin, c: T.lime },
+                    { t:'昨天 · 11:20', a:'加入 Owen 的拉伸圈 · 共 4 人', icon: Ic.Group, c: T.coral },
+                    { t:'前天 · 20:10', a:'解锁徽章「钟塔常客 · I」', icon: Ic.Trophy, c: T.amber },
+                    { t:'前天 · 07:35', a:'连续 13 天 · 晨跑入门 +1', icon: Ic.Flame, c: T.coral },
+                  ].map((e, i) => (
+                    <div key={i} style={{
+                      display:'flex', alignItems:'center', gap: 12, padding: '10px 16px',
+                      borderTop: i === 0 ? 'none' : `1px dashed ${T.lineSoft}`,
+                    }}>
+                      <div style={{
+                        width: 28, height: 28, borderRadius: 8,
+                        background: T.cardAlt, display:'grid', placeItems:'center',
+                      }}>
+                        <e.icon s={14} c={e.c}/>
+                      </div>
+                      <div style={{flex: 1, fontSize: 13, color: T.ink}}>{e.a}</div>
+                      <span style={{fontSize: 11, color: T.muted}} className="mono">{e.t}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Side rail */}
+            <div className="cq-side-rail" style={{display:'flex', flexDirection:'column', gap: 14}}>
+              {/* Map preview link */}
+              <button onClick={() => onJump('map')} style={{
+                background: T.surface, borderRadius: 16,
+                border:`1px solid ${T.line}`, padding: 16,
+                textAlign:'left', position:'relative', overflow:'hidden',
+              }} className="cq-card-hover">
+                <div style={{display:'flex', alignItems:'center', gap: 6, marginBottom: 4}}>
+                  <Ic.Map s={14} c={T.ink2}/>
+                  <span className="display" style={{fontSize: 14, fontWeight: 600, color: T.ink}}>校园地图</span>
+                  <Ic.ArrowR s={12} c={T.subtle} style={{marginLeft:'auto'}}/>
+                </div>
+                <div style={{fontSize: 12, color: T.muted, marginBottom: 10}}>
+                  当前 5 个可用点位 · 你已点亮 1 个区域
+                </div>
+                {/* mini map */}
+                <svg viewBox="0 0 280 100" style={{width:'100%', height: 80, borderRadius: 10, background:'#EFE7CF'}}>
+                  <path d="M 60,30 Q 80,15 130,18 Q 180,22 200,40 Q 210,58 170,68 Q 110,72 80,62 Q 50,52 60,30 Z" fill="#9DC8DC" opacity="0.85"/>
+                  <path d="M 30,68 Q 90,62 140,72 Q 200,82 240,76" fill="none" stroke={T.line} strokeWidth="1.2" strokeDasharray="3 4"/>
+                  <circle cx="130" cy="38" r="6" fill={T.lime} stroke={T.brownDeep} strokeWidth="1.5"/>
+                  <circle cx="80" cy="68" r="5" fill="#FFF" stroke={T.brownDeep} strokeWidth="1.5"/>
+                  <circle cx="200" cy="58" r="5" fill="#FFF" stroke={T.brownDeep} strokeWidth="1.5"/>
+                  <circle cx="50" cy="76" r="5" fill="#FFF" stroke={T.brownDeep} strokeWidth="1.5"/>
+                  <circle cx="240" cy="40" r="5" fill="#FFF" stroke={T.brownDeep} strokeWidth="1.5"/>
+                </svg>
+              </button>
+
+              {/* Co-Play card */}
+              <button onClick={() => onJump('play')} style={{
+                background: T.surface, borderRadius: 16,
+                border:`1px solid ${T.line}`, padding: 16,
+                textAlign:'left',
+              }} className="cq-card-hover">
+                <div style={{display:'flex', alignItems:'center', gap: 6, marginBottom: 4}}>
+                  <span style={{width: 6, height: 6, borderRadius: 99, background: T.coral, animation:'cq-pulse 1.6s ease-in-out infinite'}}/>
+                  <span className="display" style={{fontSize: 14, fontWeight: 600, color: T.ink}}>共玩 · 现在</span>
+                  <Ic.ArrowR s={12} c={T.subtle} style={{marginLeft:'auto'}}/>
+                </div>
+                <div style={{fontSize: 12, color: T.muted, marginBottom: 10}}>
+                  附近 4 场临时组队 · 1 场即将开始
+                </div>
+                <div style={{display:'flex', alignItems:'center', gap: 10}}>
+                  <div style={{display:'flex'}}>
+                    {['#FFB547','#5B8DF6','#FF6A3D','#7FA01F'].map((c, i) => (
+                      <div key={i} style={{
+                        width: 24, height: 24, borderRadius: 99, background: c,
+                        border: `2px solid ${T.surface}`, marginLeft: i ? -8 : 0,
+                        color:'#FFF', display:'grid', placeItems:'center', fontSize: 10, fontWeight: 700,
+                      }}>{['M','O','J','T'][i]}</div>
+                    ))}
+                  </div>
+                  <span style={{fontSize: 11, color: T.muted}} className="mono">14 人正在等队友</span>
+                </div>
+              </button>
+
+              {/* Streak card */}
+              <div style={{
+                background: T.surface, borderRadius: 16,
+                border:`1px solid ${T.line}`, padding: 16,
+              }}>
+                <div style={{display:'flex', alignItems:'center', gap: 6, marginBottom: 10}}>
+                  <Ic.Flame s={14} c={T.coral}/>
+                  <span className="display" style={{fontSize: 14, fontWeight: 600, color: T.ink}}>连续 14 天</span>
+                </div>
+                <div style={{display:'flex', gap: 3}}>
+                  {Array.from({length: 14}).map((_, i) => (
+                    <div key={i} style={{
+                      flex: 1, height: 22, borderRadius: 4,
+                      background: i < 13 ? T.lime : 'linear-gradient(180deg, #E0FF7A, #C9F23E)',
+                      border: i === 13 ? `1.5px solid ${T.brownDeep}` : 'none',
+                      opacity: 0.85,
+                    }}/>
+                  ))}
+                </div>
+                <div style={{fontSize: 11, color: T.muted, marginTop: 8}} className="mono">
+                  最长记录 · 27 天 · 距「30 天勋章」差 16 天
+                </div>
+              </div>
+
+              {/* Top areas */}
+              <div style={{
+                background: T.surface, borderRadius: 16,
+                border:`1px solid ${T.line}`, padding: 16,
+              }}>
+                <div className="display" style={{fontSize: 14, fontWeight: 600, color: T.ink, marginBottom: 10}}>
+                  本赛季常去
+                </div>
+                {[
+                  { n:'Beebe Lake', x: 8, c: T.blue },
+                  { n:'Libe Slope', x: 5, c: T.coral },
+                  { n:'Arts Quad', x: 4, c: T.amber },
+                  { n:'McGraw Tower', x: 2, c: T.green },
+                ].map(a => (
+                  <div key={a.n} style={{display:'flex', alignItems:'center', gap: 10, padding: '6px 0'}}>
+                    <span style={{width: 6, height: 6, borderRadius: 99, background: a.c}}/>
+                    <span style={{flex: 1, fontSize: 13, color: T.ink}}>{a.n}</span>
+                    <span className="mono" style={{fontSize: 11, color: T.muted}}>{a.x} 次</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    /* ================================================================
+       MAP (WEB)
+    ================================================================ */
+    const MAP_POIS = [
+      { id:'m1', x: 380, y: 280, name:'Beebe Lake', en:'Lakeside Loop', zone:'beebe',
+        type:'探索', method:'步行 · 任意配速', duration:'约 25 分钟', reward: 45, distance:'1.6 km',
+        affectsBadge:'lake', badgePoints: 25,
+        desc:'沿湖岸的轻量环线，含樱花步道与水坝观景台。完成后点亮西坡区域，并推进「湖畔探索」徽章。' },
+      { id:'m2', x: 250, y: 410, name:'Libe Slope', en:'Slope Sprint', zone:'slope',
+        type:'训练', method:'快走 / 慢跑', duration:'约 18 分钟', reward: 60, distance:'坡 × 3',
+        affectsBadge:'slope', badgePoints: 35,
+        desc:'从坡底到 McGraw Tower 来回三次。完成后点亮中坡区域，并推进「坡道征服者」徽章。' },
+      { id:'m3', x: 470, y: 380, name:'McGraw Tower', en:'Tower Climb', zone:'arts',
+        type:'探索', method:'步行 · 含台阶', duration:'约 12 分钟', reward: 30, distance:'162 阶',
+        affectsBadge:'lake', badgePoints: 10,
+        desc:'校园地标。绕塔一圈 + 拾阶而上的小挑战，适合作为下午茶后的提神。' },
+      { id:'m4', x: 180, y: 540, name:'Cascadilla Gorge', en:'Gorge Trail', zone:'gorge',
+        type:'恢复', method:'徒步 · 慢节奏', duration:'约 30 分钟', reward: 35, distance:'2.1 km',
+        affectsBadge:'recover', badgePoints: 15,
+        desc:'沿瀑布与溪流而下的步道。低强度恢复任务，适合训练后的次日。' },
+      { id:'m5', x: 400, y: 560, name:'Schoellkopf Field', en:'Track Workout', zone:'field',
+        type:'组队', method:'间歇训练', duration:'45 分钟', reward: 70, distance:'400 m × 6',
+        affectsBadge:'spring', badgePoints: 20, requiresGroup: true,
+        desc:'田径场的间歇训练，需要 3 人以上成组。可在共玩页发起或加入。' },
+    ];
+    const ZONE_BY_ID = { beebe:'湖畔', slope:'西坡', arts:'艺术四方院', gorge:'峡谷', field:'田径场' };
+
+    function CampusMapBig({pois, state, onTap, selected}) {
+      const lit = state.litAreas;
+      return (
+        <svg viewBox="0 0 640 700" width="100%" height="100%" preserveAspectRatio="xMidYMid meet">
+          <defs>
+            <pattern id="dotgridW" width="14" height="14" patternUnits="userSpaceOnUse">
+              <circle cx="1" cy="1" r="0.6" fill={T.line} opacity="0.55"/>
+            </pattern>
+            <radialGradient id="poi-glowW" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor={T.lime} stopOpacity="0.40"/>
+              <stop offset="100%" stopColor={T.lime} stopOpacity="0"/>
+            </radialGradient>
+            <linearGradient id="lake-gradW" x1="0" x2="1" y1="0" y2="1">
+              <stop offset="0%" stopColor="#B6D7E5"/>
+              <stop offset="100%" stopColor="#7FB3CB"/>
+            </linearGradient>
+            <linearGradient id="forest-gradW" x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0%" stopColor="#CCD9A8"/>
+              <stop offset="100%" stopColor="#A6BB7F"/>
+            </linearGradient>
+          </defs>
+          <rect x="0" y="0" width="640" height="700" fill="#EFE7CF"/>
+          <rect x="0" y="0" width="640" height="700" fill="url(#dotgridW)"/>
+
+          {/* forests */}
+          <path d="M 0,0 L 140,0 Q 170,90 110,140 Q 30,170 0,150 Z" fill="url(#forest-gradW)" opacity="0.85"/>
+          <path d="M 470,0 L 640,0 L 640,180 Q 580,200 540,160 Q 490,100 470,0 Z" fill="url(#forest-gradW)" opacity="0.9"/>
+          <path d="M 0,580 Q 80,560 130,610 Q 170,670 100,700 L 0,700 Z" fill="url(#forest-gradW)" opacity="0.85"/>
+          <path d="M 540,640 Q 600,620 640,650 L 640,700 L 540,700 Z" fill="url(#forest-gradW)" opacity="0.85"/>
+
+          {/* Beebe Lake */}
+          <path d="M 220,250 Q 250,200 360,212 Q 460,222 500,260 Q 510,310 460,330 Q 360,350 290,330 Q 200,310 220,250 Z"
+            fill="url(#lake-gradW)" opacity="0.95"/>
+          <text x="370" y="282" textAnchor="middle"
+            style={{fontFamily:'"Space Grotesk"', fontSize: 14, fontWeight: 600, fill:'#3D6478', letterSpacing:'0.10em'}}>BEEBE LAKE</text>
+
+          {/* gorge curve */}
+          <path d="M 110,470 Q 180,510 220,560 Q 280,620 360,650" fill="none"
+            stroke="#7AA3B8" strokeWidth="3.5" opacity="0.55" strokeLinecap="round"/>
+          <path d="M 110,470 Q 180,510 220,560 Q 280,620 360,650" fill="none"
+            stroke="#B5D4E0" strokeWidth="9" opacity="0.30" strokeLinecap="round"/>
+
+          {/* trails */}
+          <path d="M 380,290 L 470,380 L 250,420 L 180,540 L 400,560" fill="none" stroke={T.line} strokeWidth="1.6" strokeDasharray="6 7" opacity="0.65" strokeLinecap="round"/>
+
+          {/* arts quad */}
+          <rect x="430" y="340" width="120" height="100" rx="10" fill="#E5DCC0" stroke={T.line} strokeWidth="1"/>
+          <text x="490" y="394" textAnchor="middle"
+            style={{fontFamily:'"Space Grotesk"', fontSize: 10.5, fill: T.muted, letterSpacing:'0.12em'}}>ARTS QUAD</text>
+
+          {/* libe slope */}
+          <path d="M 200,400 L 320,370 L 320,450 L 200,484 Z" fill="#D4DDB7" opacity="0.78"/>
+          <text x="260" y="424" textAnchor="middle"
+            style={{fontFamily:'"Space Grotesk"', fontSize: 10.5, fill:'#506C2C', letterSpacing:'0.12em'}}>LIBE SLOPE</text>
+
+          {/* track field */}
+          <ellipse cx="402" cy="562" rx="56" ry="32" fill="#D9C9A8" stroke={T.line} strokeWidth="1"/>
+          <ellipse cx="402" cy="562" rx="44" ry="22" fill="none" stroke="#A5895E" strokeWidth="1" strokeDasharray="2 3" opacity="0.7"/>
+          <text x="402" y="566" textAnchor="middle"
+            style={{fontFamily:'"Space Grotesk"', fontSize: 10, fill:'#7C5F36', letterSpacing:'0.10em'}}>SCHOELLKOPF</text>
+
+          {/* lit overlays */}
+          {lit.includes('arts') && <rect x="430" y="340" width="120" height="100" rx="10" fill={T.lime} opacity="0.30"/>}
+          {lit.includes('slope') && <path d="M 200,400 L 320,370 L 320,450 L 200,484 Z" fill={T.lime} opacity="0.35"/>}
+          {lit.includes('beebe') && <path d="M 220,250 Q 250,200 360,212 Q 460,222 500,260 Q 510,310 460,330 Q 360,350 290,330 Q 200,310 220,250 Z" fill={T.lime} opacity="0.20"/>}
+          {lit.includes('gorge') && <path d="M 110,470 Q 180,510 220,560 Q 280,620 360,650" fill="none" stroke={T.lime} strokeWidth="14" opacity="0.30" strokeLinecap="round"/>}
+          {lit.includes('field') && <ellipse cx="402" cy="562" rx="56" ry="32" fill={T.lime} opacity="0.30"/>}
+
+          {/* POIs */}
+          {pois.map(p => {
+            const isLit = lit.includes(p.zone);
+            const isActive = selected === p.id;
+            const inProgress = state.mapTaskState[p.id] === 'inProgress';
+            return (
+              <g key={p.id} onClick={() => onTap(p.id)} style={{cursor:'pointer'}}>
+                {(isActive || inProgress) && <circle cx={p.x} cy={p.y} r="28" fill="url(#poi-glowW)"/>}
+                <circle cx={p.x} cy={p.y} r={isActive ? 14 : 11} fill={isLit ? T.lime : '#FFF'} stroke={T.brownDeep} strokeWidth={isActive ? 2.5 : 2}/>
+                {isLit && <circle cx={p.x} cy={p.y} r="4.5" fill={T.brownDeep}/>}
+                {!isLit && <circle cx={p.x} cy={p.y} r="3.5" fill={T.coral}/>}
+                {isActive && (
+                  <circle cx={p.x} cy={p.y} r="16" fill="none" stroke={T.lime} strokeWidth="2" opacity="0.6">
+                    <animate attributeName="r" values="16;30" dur="1.4s" repeatCount="indefinite"/>
+                    <animate attributeName="opacity" values="0.7;0" dur="1.4s" repeatCount="indefinite"/>
+                  </circle>
+                )}
+                <text x={p.x} y={p.y - 22} textAnchor="middle"
+                  style={{fontFamily:'"Inter"', fontSize: 11, fontWeight: 600, fill: T.ink2, pointerEvents:'none'}}>
+                  {p.name}
+                </text>
+              </g>
+            );
+          })}
+
+          {/* Compass */}
+          <g transform="translate(580, 50)">
+            <circle r="22" fill="#FFF" stroke={T.line}/>
+            <path d="M 0,-12 L 4,0 L 0,12 L -4,0 Z" fill={T.coral}/>
+            <text y="-28" textAnchor="middle" style={{fontFamily:'"JetBrains Mono"', fontSize: 10, fill: T.muted, letterSpacing:'0.08em'}}>N</text>
+          </g>
+        </svg>
+      );
+    }
+
+    function ScreenMap({state, actions}) {
+      const [selected, setSelected] = useState('m1');
+      const [filter, setFilter] = useState('all');
+      const poi = MAP_POIS.find(p => p.id === selected);
+      const taskState = poi ? state.mapTaskState[poi.id] : 'idle';
+      const filtered = filter === 'all' ? MAP_POIS : MAP_POIS.filter(p => p.type === filter);
+      const lit = state.litAreas.includes(poi?.zone);
+
+      return (
+        <div className="cq-screen-enter" style={{padding:'20px 32px 32px', height:'calc(100vh - 76px)'}}>
+          <div style={{display:'grid', gridTemplateColumns:'1fr 380px', gap: 18, height:'100%'}}>
+            {/* Map column */}
+            <div style={{display:'flex', flexDirection:'column', gap: 14, minHeight: 0}}>
+              {/* Filter bar */}
+              <div style={{display:'flex', gap: 10, alignItems:'center'}}>
+                <div style={{
+                  flex: 1, display:'flex', alignItems:'center', gap: 10,
+                  background: T.surface, border:`1px solid ${T.line}`,
+                  padding:'10px 14px', borderRadius: 12,
+                }}>
+                  <Ic.Search s={15} c={T.muted}/>
+                  <input placeholder="搜索校园点位 · 路线 · 任务"
+                    style={{flex: 1, border:0, outline:0, background:'transparent', fontSize: 13, color: T.ink}}/>
+                  <Pill tone="ghost" size="xs">Preview</Pill>
+                </div>
+                <div style={{display:'flex', gap: 6}}>
+                  {[
+                    {k:'all', label:'全部'},{k:'探索', label:'探索'},
+                    {k:'训练', label:'训练'},{k:'恢复', label:'恢复'},{k:'组队', label:'组队'},
+                  ].map(t => (
+                    <button key={t.k} onClick={() => setFilter(t.k)} style={{
+                      padding:'7px 13px', borderRadius: 999,
+                      background: filter === t.k ? T.brownDeep : T.surface,
+                      color: filter === t.k ? '#FFF' : T.ink2,
+                      border: `1px solid ${filter === t.k ? T.brownDeep : T.line}`,
+                      fontSize: 12, fontWeight: 500,
+                    }}>{t.label}</button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Map */}
+              <div style={{
+                flex: 1, background: T.surface, borderRadius: 18,
+                border:`1px solid ${T.line}`, position:'relative', overflow:'hidden',
+                minHeight: 480,
+              }}>
+                <CampusMapBig pois={filtered} state={state} onTap={setSelected} selected={selected}/>
+                {/* legend */}
+                <div style={{
+                  position:'absolute', bottom: 16, left: 16,
+                  background:'rgba(255,253,247,0.95)', border:`1px solid ${T.line}`,
+                  borderRadius: 12, padding:'10px 14px',
+                  display:'flex', gap: 14, alignItems:'center',
+                  fontSize: 12, color: T.ink2,
+                  boxShadow:'0 4px 12px rgba(20,18,12,0.06)',
+                }}>
+                  <span style={{display:'flex', alignItems:'center', gap: 6}}>
+                    <span style={{width: 11, height: 11, borderRadius: 99, background: T.lime, border:`1.5px solid ${T.brownDeep}`}}/>
+                    已点亮 · {state.seasonLit}
+                  </span>
+                  <span style={{width: 1, height: 14, background: T.line}}/>
+                  <span style={{display:'flex', alignItems:'center', gap: 6}}>
+                    <span style={{width: 11, height: 11, borderRadius: 99, background:'#FFF', border:`1.5px solid ${T.brownDeep}`}}/>
+                    待探索 · {state.seasonTotal - state.seasonLit}
+                  </span>
+                  <span style={{width: 1, height: 14, background: T.line}}/>
+                  <span className="mono" style={{fontSize: 11, color: T.muted}}>
+                    {Math.round((state.seasonLit / state.seasonTotal) * 100)}% 已点亮
+                  </span>
+                </div>
+                {/* season corner */}
+                <div style={{
+                  position:'absolute', top: 16, right: 16,
+                  background: T.brownDeep, color:'#FFF',
+                  borderRadius: 14, padding:'10px 14px',
+                  display:'flex', alignItems:'center', gap: 10,
+                  boxShadow:'0 8px 18px rgba(20,18,12,0.20)',
+                }}>
+                  <div style={{width: 32, height: 32, borderRadius: 99, background: T.lime, display:'grid', placeItems:'center'}}>
+                    <Ic.Spark s={15} c={T.brownDeep}/>
+                  </div>
+                  <div>
+                    <div style={{fontSize: 9.5, color:'rgba(255,255,255,0.55)', letterSpacing:'0.10em'}} className="mono">SEASON LIT</div>
+                    <div className="mono" style={{fontSize: 16, fontWeight: 700}}><Counter value={state.seasonLit}/>/{state.seasonTotal}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Detail panel */}
+            <aside style={{
+              background: T.surface, borderRadius: 18,
+              border:`1px solid ${T.line}`, padding: 22,
+              display:'flex', flexDirection:'column', gap: 14,
+              alignSelf:'flex-start', position:'sticky', top: 96,
+            }} key={poi?.id}>
+              {poi ? (
+                <Fragment>
+                  <div>
+                    <div style={{display:'flex', alignItems:'center', gap: 6, marginBottom: 8, flexWrap:'wrap'}}>
+                      <Pill tone={poi.type === '探索' ? 'blue' : poi.type === '训练' ? 'coral' : poi.type === '恢复' ? 'green' : 'amber'} size="sm">{poi.type}</Pill>
+                      <Pill tone="ghost" size="xs" icon={<Ic.Pin s={9} c={T.muted}/>}>{poi.en}</Pill>
+                      {lit && <Pill tone="lime" size="xs" icon={<Ic.Check s={9}/>}>已点亮</Pill>}
+                    </div>
+                    <div className="display" style={{fontSize: 24, fontWeight: 600, color: T.ink, lineHeight: 1.15}}>
+                      {poi.name}
+                    </div>
+                    <div style={{fontSize: 13.5, color: T.muted, marginTop: 8, lineHeight: 1.5}}>
+                      {poi.desc}
+                    </div>
+                  </div>
+
+                  <div style={{display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap: 8}}>
+                    <div style={{background: T.cardAlt, borderRadius: 11, padding:'9px 11px'}}>
+                      <div style={{fontSize: 10.5, color: T.muted, fontWeight: 500}}>类型</div>
+                      <div style={{fontSize: 12, color: T.ink, fontWeight: 600, marginTop: 2}}>{poi.method}</div>
+                    </div>
+                    <div style={{background: T.cardAlt, borderRadius: 11, padding:'9px 11px'}}>
+                      <div style={{fontSize: 10.5, color: T.muted, fontWeight: 500}}>耗时</div>
+                      <div className="mono" style={{fontSize: 12, color: T.ink, fontWeight: 600, marginTop: 2}}>{poi.duration}</div>
+                    </div>
+                    <div style={{background: T.cardAlt, borderRadius: 11, padding:'9px 11px'}}>
+                      <div style={{fontSize: 10.5, color: T.muted, fontWeight: 500}}>距离</div>
+                      <div className="mono" style={{fontSize: 12, color: T.ink, fontWeight: 600, marginTop: 2}}>{poi.distance}</div>
+                    </div>
+                  </div>
+
+                  <div style={{
+                    padding:'10px 12px', background:'rgba(201,242,62,0.16)', borderRadius: 11,
+                    fontSize: 12, color: T.ink2, lineHeight: 1.45,
+                    display:'flex', alignItems:'center', gap: 8,
+                  }}>
+                    <Ic.Spark s={13} c={T.limeDeep}/>
+                    <span>奖励 +{poi.reward} 活力 · 完成可点亮「{ZONE_BY_ID[poi.zone]}」 · 推进徽章</span>
+                  </div>
+
+                  <div style={{display:'flex', gap: 8}}>
+                    {!lit && taskState === 'idle' && (
+                      <button onClick={() => actions.startMapTask(poi)} className="cq-btn-pri" style={{
+                        flex: 1, background: T.brownDeep, color:'#FFF',
+                        padding:'13px 16px', borderRadius: 13,
+                        fontSize: 14, fontWeight: 600,
+                        display:'flex', alignItems:'center', justifyContent:'center', gap: 6,
+                      }}>
+                        <Ic.Compass s={15} c={T.lime}/> 开始任务
+                      </button>
+                    )}
+                    {taskState === 'inProgress' && (
+                      <button onClick={() => actions.completeMapTask(poi)} style={{
+                        flex: 1, background: T.lime, color: T.brownDeep,
+                        padding:'13px 16px', borderRadius: 13,
+                        fontSize: 14, fontWeight: 700,
+                        display:'flex', alignItems:'center', justifyContent:'center', gap: 6,
+                        animation:'cq-glow 1.6s ease-in-out infinite',
+                      }}>
+                        <Ic.Check s={15} c={T.brownDeep}/> 标记完成 · +{poi.reward} 活力
+                      </button>
+                    )}
+                    {(taskState === 'completed' || lit) && (
+                      <div style={{
+                        flex: 1, padding:'13px 16px', borderRadius: 13,
+                        background:'#E5EFD7', color:'#3F5E1F',
+                        textAlign:'center', fontSize: 13, fontWeight: 600,
+                        display:'flex', alignItems:'center', justifyContent:'center', gap: 6,
+                      }}>
+                        <Ic.Check s={14} c="#3F5E1F"/> 已点亮 · 任务完成
+                      </div>
+                    )}
+                    <button className="cq-btn-sec" style={{
+                      width: 50, padding:'13px 0', borderRadius: 13,
+                      background: T.cardAlt, display:'grid', placeItems:'center',
+                    }} onClick={() => actions.toast({title:'路线模拟 · Preview', detail:'本原型聚焦任务与徽章闭环', icon:'pin'})}>
+                      <Ic.Compass s={16} c={T.ink2}/>
+                    </button>
+                  </div>
+
+                  {/* nearby chip list */}
+                  <div style={{marginTop: 4}}>
+                    <div style={{fontSize: 11, color: T.muted, letterSpacing:'0.08em', marginBottom: 8}} className="mono">附近其他点位</div>
+                    <div style={{display:'flex', flexDirection:'column', gap: 6}}>
+                      {MAP_POIS.filter(p => p.id !== poi.id).slice(0, 3).map(p => {
+                        const lit2 = state.litAreas.includes(p.zone);
+                        return (
+                          <button key={p.id} onClick={() => setSelected(p.id)} style={{
+                            display:'flex', alignItems:'center', gap: 10,
+                            padding:'8px 10px', borderRadius: 10,
+                            background: T.cardAlt, textAlign:'left',
+                          }} className="cq-card-hover">
+                            <span style={{
+                              width: 8, height: 8, borderRadius: 99,
+                              background: lit2 ? T.lime : '#FFF',
+                              border: `1.5px solid ${T.brownDeep}`,
+                            }}/>
+                            <span style={{fontSize: 13, color: T.ink, fontWeight: 500, flex: 1}}>{p.name}</span>
+                            <Pill tone="ghost" size="xs">{p.type}</Pill>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </Fragment>
+              ) : (
+                <div style={{textAlign:'center', color: T.muted, padding: 40}}>选择一个点位查看任务详情</div>
+              )}
+            </aside>
+          </div>
+        </div>
+      );
+    }
+
+    /* ================================================================
+       PLAY (WEB)
+    ================================================================ */
+    const PLAY_LIST = [
+      { id:'p1', host:'Mei · @neon_run', when:'18:30 起 · 5 min 后',
+        title:'Beebe Lake 3K 慢跑', sub:'临时组队 · 西坡集合',
+        type:'训练', need: 4, joined: 3, reward: 30,
+        affectsBadge:'spring', badgePoints: 25, hot: true },
+      { id:'p2', host:'Owen · @libe.daily', when:'19:00 起 · 28 min 后',
+        title:'Slope Day 拉伸圈', sub:'低强度 · 适合训练后',
+        type:'恢复', need: 6, joined: 2, reward: 20,
+        affectsBadge:'spring', badgePoints: 20 },
+      { id:'p3', host:'JIN · @tower.climb', when:'明早 07:30 起',
+        title:'McGraw 钟塔阶梯挑战', sub:'晨光出动 · 162 阶 × 2',
+        type:'探索', need: 4, joined: 1, reward: 40,
+        affectsBadge:'spring', badgePoints: 15 },
+      { id:'p4', host:'Track Crew · 校队', when:'今晚 20:00',
+        title:'400m × 6 间歇训练', sub:'Schoellkopf · 中阶以上',
+        type:'训练', need: 5, joined: 4, reward: 70,
+        affectsBadge:'spring', badgePoints: 30 },
+    ];
+
+    function PlayCard({item, state, onJoin}) {
+      const joined = state.playState[item.id] === 'joined';
+      const headcount = item.joined + (joined ? 1 : 0);
+      const full = headcount >= item.need;
+      return (
+        <div className="cq-card-hover" style={{
+          background: T.surface, borderRadius: 18,
+          border: `1px solid ${joined ? T.brownDeep : T.line}`,
+          padding: 18, position:'relative',
+        }}>
+          {item.hot && !joined && (
+            <div style={{
+              position:'absolute', top: -10, right: 18,
+              background: T.coral, color:'#FFF',
+              padding:'4px 10px', borderRadius: 999,
+              fontSize: 10, fontWeight: 700, letterSpacing:'0.10em',
+              display:'flex', alignItems:'center', gap: 4,
+            }} className="mono">
+              <Ic.Flame s={10} c="#FFF"/> 即将开始
+            </div>
+          )}
+          <div style={{display:'flex', alignItems:'center', gap: 6, marginBottom: 6, flexWrap:'wrap'}}>
+            <Pill tone={item.type === '训练' ? 'coral' : item.type === '恢复' ? 'green' : 'blue'} size="xs">{item.type}</Pill>
+            <span className="mono" style={{fontSize: 11, color: T.muted}}>{item.when}</span>
+          </div>
+          <div className="display" style={{fontSize: 18, fontWeight: 600, color: T.ink, lineHeight: 1.2}}>
+            {item.title}
+          </div>
+          <div style={{fontSize: 12.5, color: T.muted, marginTop: 3}}>{item.sub} · 由 {item.host} 发起</div>
+
+          <div style={{
+            display:'flex', alignItems:'center', justifyContent:'space-between',
+            marginTop: 14, paddingTop: 12, borderTop: `1px dashed ${T.lineSoft}`,
+          }}>
+            <div style={{display:'flex', alignItems:'center', gap: 10}}>
+              <div style={{display:'flex'}}>
+                {Array.from({length: Math.min(headcount, 4)}).map((_, i) => (
+                  <div key={i} style={{
+                    width: 26, height: 26, borderRadius: 99,
+                    background: ['#FFB547','#5B8DF6','#FF6A3D','#7FA01F'][i % 4],
+                    border:`2px solid ${T.surface}`, marginLeft: i ? -8 : 0,
+                    color:'#FFF', display:'grid', placeItems:'center', fontSize: 11, fontWeight: 700,
+                  }}>{['M','O','J','T'][i % 4]}</div>
+                ))}
+                {headcount < item.need && (
+                  <div style={{
+                    width: 26, height: 26, borderRadius: 99,
+                    background: T.cardAlt, color: T.muted,
+                    border:`2px dashed ${T.line}`, marginLeft: -8,
+                    display:'grid', placeItems:'center',
+                  }}><Ic.Plus s={11} c={T.muted}/></div>
+                )}
+              </div>
+              <div className="mono" style={{fontSize: 12, color: T.ink2}}>
+                <span style={{fontWeight: 700}}>{headcount}</span><span style={{color: T.muted}}>/{item.need}</span>
+                <span style={{color: T.muted, marginLeft: 4, fontWeight: 400}}>· 满员开始</span>
+              </div>
+            </div>
+            <div style={{display:'flex', alignItems:'center', gap: 4}}>
+              <Ic.Lightning s={12} c={T.limeDeep}/>
+              <span className="mono" style={{fontSize: 12, color: T.ink, fontWeight: 600}}>+{item.reward}</span>
+            </div>
+          </div>
+
+          <button onClick={() => !joined && !full && onJoin(item)} disabled={joined || full} style={{
+            marginTop: 12, width: '100%',
+            background: joined ? '#E5EFD7' : full ? T.cardAlt : T.brownDeep,
+            color: joined ? '#3F5E1F' : full ? T.muted : '#FFF',
+            padding:'11px 16px', borderRadius: 12,
+            fontSize: 13, fontWeight: 600,
+            display:'flex', alignItems:'center', justifyContent:'center', gap: 6,
+            cursor: (joined || full) ? 'default' : 'pointer',
+          }} className={!joined && !full ? 'cq-btn-pri' : ''}>
+            {joined ? <><Ic.Check s={14} c="#3F5E1F"/> 已加入 · 等待开始</> :
+             full ? '已满员' :
+             <><Ic.Plus s={13} c={T.lime}/> 加入 · 推进春日共玩</>}
+          </button>
+        </div>
+      );
+    }
+
+    function ScreenPlay({state, actions, onJump}) {
+      const heatmapData = [3,5,8,12,18,28,38,32,22,16,10,6,4,2];
+      const peak = Math.max(...heatmapData);
+      return (
+        <div className="cq-screen-enter" style={{padding:'24px 32px 40px'}}>
+          {/* Header */}
+          <div style={{
+            background: T.surface, borderRadius: 22,
+            border:`1px solid ${T.line}`, padding: 26,
+            marginBottom: 22, position:'relative', overflow:'hidden',
+          }}>
+            <div style={{
+              position:'absolute', right: -40, top: -40,
+              width: 200, height: 200, borderRadius: 99,
+              background:'radial-gradient(circle, rgba(255,106,61,0.16) 0%, transparent 60%)',
+            }}/>
+            <div style={{display:'grid', gridTemplateColumns:'1fr auto', gap: 24, alignItems:'center', position:'relative'}}>
+              <div>
+                <div style={{display:'flex', alignItems:'center', gap: 6, marginBottom: 4}}>
+                  <span style={{fontSize: 10, fontWeight: 700, letterSpacing:'0.16em', color: T.coral}} className="mono">CO·PLAY</span>
+                  <span style={{width: 4, height: 4, background: T.line, borderRadius: 99}}/>
+                  <span style={{fontSize: 10, color: T.muted, letterSpacing:'0.08em'}} className="mono">CORNELL · NOW</span>
+                </div>
+                <div className="display" style={{fontSize: 28, fontWeight: 600, color: T.ink, letterSpacing:'-0.01em'}}>
+                  共玩 · 校园里的轻协作
+                </div>
+                <div style={{fontSize: 14, color: T.muted, marginTop: 8, lineHeight: 1.5, maxWidth: 540}}>
+                  <span style={{color: T.ink2, fontWeight: 500}}>不需要先加好友</span>。基于同地点 · 同时段 · 同任务的轻量组队，与附近的人一起完成短时挑战，加入即推进徽章。
+                </div>
+              </div>
+              <div style={{
+                background: T.cardAlt, borderRadius: 16, padding:'14px 18px',
+                minWidth: 240,
+              }}>
+                <div style={{display:'flex', alignItems:'center', gap: 6, marginBottom: 8}}>
+                  <span style={{width: 7, height: 7, borderRadius: 99, background: T.coral, animation:'cq-pulse 1.6s ease-in-out infinite'}}/>
+                  <span className="mono" style={{fontSize: 10.5, color: T.muted, letterSpacing:'0.10em'}}>LIVE · 校园活跃度</span>
+                </div>
+                <div style={{display:'flex', alignItems:'baseline', gap: 8, marginBottom: 8}}>
+                  <span className="display" style={{fontSize: 30, fontWeight: 700, color: T.coral, letterSpacing:'-0.02em'}}>248</span>
+                  <span style={{fontSize: 12, color: T.ink2}}>人正在校园里运动</span>
+                </div>
+                <div style={{display:'flex', gap: 2, alignItems:'flex-end', height: 36}}>
+                  {heatmapData.map((v, i) => (
+                    <div key={i} style={{
+                      flex: 1, height: (v/peak)*100 + '%',
+                      background: v === peak ? T.coral : i > 6 && i < 10 ? '#FFB68A' : T.lime,
+                      borderRadius: 2, opacity: 0.85,
+                    }}/>
+                  ))}
+                </div>
+                <button onClick={() => onJump('map')} className="cq-link" style={{
+                  marginTop: 10, fontSize: 11, color: T.muted,
+                  display:'flex', alignItems:'center', gap: 4,
+                }}>
+                  在地图查看热点 <Ic.ArrowR s={11} c={T.muted}/>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Activities */}
+          <div style={{display:'flex', alignItems:'baseline', justifyContent:'space-between', marginBottom: 14}}>
+            <div>
+              <div className="display" style={{fontSize: 20, fontWeight: 600, color: T.ink}}>
+                附近正在发生
+              </div>
+              <div style={{fontSize: 12.5, color: T.muted, marginTop: 2}}>
+                共 4 场 · 排序: 时间 · 1 场即将开始
+              </div>
+            </div>
+            <div style={{display:'flex', gap: 6}}>
+              <button className="cq-btn-sec" style={{
+                background: T.cardAlt, padding:'7px 13px', borderRadius: 999,
+                fontSize: 12, fontWeight: 500, color: T.ink2,
+                display:'flex', alignItems:'center', gap: 5,
+              }}>
+                <Ic.Filter s={12} c={T.muted}/> 筛选
+              </button>
+              <button onClick={() => actions.toast({title:'发起共玩 · Preview', detail:'本原型聚焦核心闭环', icon:'group'})} className="cq-btn-pri" style={{
+                background: T.brownDeep, color:'#FFF',
+                padding:'7px 14px', borderRadius: 999,
+                fontSize: 12, fontWeight: 600,
+                display:'flex', alignItems:'center', gap: 5,
+              }}>
+                <Ic.Plus s={12} c={T.lime}/> 发起共玩
+              </button>
+            </div>
+          </div>
+
+          <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap: 14}}>
+            {PLAY_LIST.map(item => (
+              <PlayCard key={item.id} item={item} state={state} onJoin={actions.joinPlay}/>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    /* ================================================================
+       BADGES (WEB)
+    ================================================================ */
+    const ALL_BADGES = [
+      { id:'lake', name:'湖畔探索 · I', cat:'season', area:'beebe',
+        desc:'累计在 Beebe Lake 完成 4 次任务',
+        Icon: ({c, s=24}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.6" strokeLinecap="round"><path d="M3 16c2-2 4-2 6 0s4 2 6 0 4-2 6 0"/><path d="M3 12c2-2 4-2 6 0s4 2 6 0 4-2 6 0"/><circle cx="12" cy="6" r="2.4"/></svg> },
+      { id:'slope', name:'坡道征服者', cat:'place', area:'slope',
+        desc:'在 Libe Slope 累计完成 5 次坡度训练',
+        Icon: ({c, s=24}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M3 20L20 6L20 20Z"/><path d="M9 20l3-7 3 3"/></svg> },
+      { id:'recover', name:'修复者', cat:'season', area:null,
+        desc:'连续 7 天完成至少一次恢复任务',
+        Icon: ({c, s=24}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M12 21s-7-5-7-11a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 6-7 11-7 11z"/><path d="M9 11h2l1-2 1 4 1-2h2"/></svg> },
+      { id:'spring', name:'春日共玩', cat:'event', area:null,
+        desc:'参与 5 次春日赛季的共玩活动',
+        Icon: ({c, s=24}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="9" r="3"/><circle cx="17" cy="11" r="2.4"/><path d="M3 19c.8-3 3-4.5 6-4.5s5.2 1.5 6 4.5"/></svg> },
+      { id:'tower', name:'钟塔常客', cat:'place', area:'arts',
+        desc:'登顶 McGraw Tower 3 次',
+        Icon: ({c, s=24}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21V8l3-4 3 4v13"/><path d="M9 12h6M9 16h6"/></svg> },
+      { id:'gorge', name:'峡谷漫步者', cat:'place', area:'gorge',
+        desc:'完成 Cascadilla Gorge 全段 2 次',
+        Icon: ({c, s=24}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4l4 8-4 8h6l4-8-4-8z"/><path d="M14 4l4 8-4 8"/></svg> },
+      { id:'streak', name:'14 天连续', cat:'season', area:null,
+        desc:'连续 14 天有运动行为',
+        Icon: ({c, s=24}) => <svg width={s} height={s} viewBox="0 0 24 24" fill={c}><path d="M12 2s5 4 5 9a5 5 0 1 1-10 0c0-2 1-3 2-4-1 3 2 4 2 4s-2-3 1-9z"/></svg> },
+      { id:'firstweek', name:'首周开赛', cat:'event', area:null,
+        desc:'本赛季第一周完成 3 件事',
+        Icon: ({c, s=24}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.6" strokeLinecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg> },
+      { id:'limited', name:'湖畔之春 · 限定', cat:'limited', area:null,
+        desc:'本赛季完成湖畔系列全 3 个任务',
+        Icon: ({c, s=24}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 15.4 6.8 18.1l1-5.8L3.5 8.2l5.9-.9z"/></svg> },
+    ];
+    const BADGE_STATIC = {
+      lake: { baseProgress: 60 }, slope: { baseProgress: 35 }, recover: { baseProgress: 70 },
+      spring: { baseProgress: 30 }, tower: { baseProgress: 45 }, gorge: { baseProgress: 25 },
+      streak: { baseProgress: 100 }, firstweek: { baseProgress: 100 }, limited: { baseProgress: 15 },
+    };
+
+    function BadgeCard({b, progress, recent}) {
+      const earned = progress >= 100;
+      return (
+        <div className="cq-card-hover" style={{
+          background: earned ? T.lime : T.surface,
+          borderRadius: 16, padding: 16,
+          border:`1px solid ${earned ? T.brownDeep : T.line}`,
+          position:'relative', overflow:'hidden',
+          boxShadow: recent ? '0 8px 24px rgba(201,242,62,0.45)' : 'none',
+          animation: recent ? 'cq-glow 1.6s ease-in-out 3' : 'none',
+        }}>
+          {recent && (
+            <div style={{
+              position:'absolute', top: 10, right: 10,
+              fontSize: 9.5, fontWeight: 700, letterSpacing:'0.10em', color: T.coral,
+            }} className="mono">+ JUST NOW</div>
+          )}
+          <div style={{
+            width: 56, height: 56, borderRadius: 14,
+            background: earned ? T.brownDeep : T.cardAlt,
+            display:'grid', placeItems:'center', marginBottom: 10,
+          }}>
+            <b.Icon c={earned ? T.lime : T.subtle} s={28}/>
+          </div>
+          <div className="display" style={{fontSize: 14.5, fontWeight: 600, color: earned ? T.brownDeep : T.ink, lineHeight: 1.2}}>
+            {b.name}
+          </div>
+          <div style={{fontSize: 11.5, color: earned ? T.ink2 : T.muted, marginTop: 4, lineHeight: 1.35, minHeight: 32}}>
+            {b.desc}
+          </div>
+          <div style={{
+            marginTop: 10, height: 5, borderRadius: 99,
+            background: earned ? 'rgba(20,18,12,0.18)' : T.cardAlt, overflow:'hidden',
+          }}>
+            <div style={{
+              width: progress + '%', height:'100%',
+              background: T.brownDeep, transition:'width 600ms cubic-bezier(.2,1,.4,1)', borderRadius: 99,
+            }}/>
+          </div>
+          <div style={{
+            display:'flex', justifyContent:'space-between',
+            fontSize: 10.5, color: earned ? T.ink2 : T.muted,
+            marginTop: 5,
+          }} className="mono">
+            <span style={{fontWeight: earned ? 700 : 500}}>{earned ? '已解锁' : `${progress}%`}</span>
+            {!earned && <span style={{fontWeight: 600}}>{progress}/100</span>}
+          </div>
+        </div>
+      );
+    }
+
+    function ArchivePane({state, totalEarned}) {
+      const stats = [
+        { k:'已点亮区域', v: state.seasonLit, suf:`/${state.seasonTotal}`, c: T.lime },
+        { k:'共玩参与', v: Object.values(state.playState).filter(s => s === 'joined').length, suf:' 次', c: T.coral },
+        { k:'当前活力', v: state.vitality, suf:'', c: T.brownDeep },
+        { k:'解锁徽章', v: totalEarned, suf:'', c: T.amber },
+      ];
+      const dist = [
+        { k:'探索', v: 38, c: T.blue },{ k:'恢复', v: 24, c: T.green },
+        { k:'训练', v: 28, c: T.coral },{ k:'组队', v: 10, c: T.amber },
+      ];
+      return (
+        <div style={{display:'grid', gridTemplateColumns:'2fr 1fr', gap: 14}}>
+          <div style={{display:'flex', flexDirection:'column', gap: 14}}>
+            <div style={{
+              background: T.surface, borderRadius: 18,
+              border:`1px solid ${T.line}`, padding: 18,
+            }}>
+              <div className="display" style={{fontSize: 16, fontWeight: 600, color: T.ink, marginBottom: 12}}>
+                本赛季 · 一眼概览
+              </div>
+              <div style={{display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap: 10}}>
+                {stats.map(s => (
+                  <div key={s.k} style={{background: T.cardAlt, borderRadius: 12, padding:'12px 14px'}}>
+                    <div style={{fontSize: 11, color: T.muted}}>{s.k}</div>
+                    <div className="mono" style={{fontSize: 26, fontWeight: 700, color: T.ink, marginTop: 2, letterSpacing:'-0.02em'}}>
+                      {s.v}<span style={{color: T.muted, fontSize: 14, fontWeight: 500}}>{s.suf}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div style={{
+              background: T.surface, borderRadius: 18,
+              border:`1px solid ${T.line}`, padding: 18,
+            }}>
+              <div className="display" style={{fontSize: 16, fontWeight: 600, color: T.ink}}>
+                任务类型分布
+              </div>
+              <div style={{fontSize: 12, color: T.muted, marginTop: 4, marginBottom: 14}}>
+                你这赛季最常做的事是「探索」类任务
+              </div>
+              <div style={{display:'flex', gap: 4, height: 18, borderRadius: 99, overflow:'hidden'}}>
+                {dist.map(d => (
+                  <div key={d.k} style={{flex: d.v, background: d.c, opacity: 0.85}}/>
+                ))}
+              </div>
+              <div style={{display:'flex', flexDirection:'row', gap: 18, marginTop: 14, flexWrap:'wrap'}}>
+                {dist.map(d => (
+                  <div key={d.k} style={{display:'flex', alignItems:'center', gap: 6}}>
+                    <span style={{width: 10, height: 10, borderRadius: 99, background: d.c}}/>
+                    <span style={{fontSize: 12, color: T.ink}}>{d.k}</span>
+                    <span className="mono" style={{fontSize: 11, color: T.muted}}>{d.v}%</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div style={{
+            background: T.surface, borderRadius: 18,
+            border:`1px solid ${T.line}`, padding: 18,
+          }}>
+            <div className="display" style={{fontSize: 16, fontWeight: 600, color: T.ink}}>
+              活跃时段
+            </div>
+            <div style={{fontSize: 12, color: T.muted, marginTop: 4, marginBottom: 14}}>
+              你最常活跃在 <span style={{color: T.ink, fontWeight: 600}}>傍晚 17:30–19:00</span>
+            </div>
+            <div style={{display:'flex', gap: 3, alignItems:'flex-end', height: 100}}>
+              {[6,8,12,16,14,10,18,28,38,42,32,20,12,8].map((v, i) => (
+                <div key={i} style={{
+                  flex: 1, height: (v/42)*100 + '%',
+                  background: v > 30 ? T.coral : v > 16 ? T.amber : T.lime,
+                  borderRadius: 2, opacity: 0.85,
+                }}/>
+              ))}
+            </div>
+            <div style={{display:'flex', justifyContent:'space-between', fontSize: 10, color: T.subtle, marginTop: 8}} className="mono">
+              <span>06:00</span><span>12:00</span><span>18:00 ↑</span><span>23:00</span>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function ScreenBadges({state, actions}) {
+      const [filter, setFilter] = useState('all');
+      const [tab, setTab] = useState('badges');
+      const filtered = filter === 'all' ? ALL_BADGES :
+                       filter === 'season' ? ALL_BADGES.filter(b => b.cat === 'season' || b.cat === 'limited') :
+                       filter === 'limited' ? ALL_BADGES.filter(b => b.cat === 'limited') :
+                       filter === 'place' ? ALL_BADGES.filter(b => b.cat === 'place') :
+                       filter === 'event' ? ALL_BADGES.filter(b => b.cat === 'event') : ALL_BADGES;
+      const earned = ALL_BADGES.filter(b => (state.badges[b.id] ?? BADGE_STATIC[b.id].baseProgress) >= 100).length;
+      const total = ALL_BADGES.length;
+      const score = state.vitality + state.seasonLit * 30 + earned * 50;
+
+      return (
+        <div className="cq-screen-enter" style={{padding:'24px 32px 40px'}}>
+          {/* Tier Hero */}
+          <div style={{
+            background:`linear-gradient(135deg, #FAF5E6 0%, #F1E7C9 100%)`,
+            borderRadius: 22, padding: 26,
+            border:`1px solid ${T.line}`,
+            position:'relative', overflow:'hidden', marginBottom: 18,
+          }}>
+            <div style={{
+              position:'absolute', right: -50, top: -50,
+              width: 240, height: 240, borderRadius: 99,
+              background:'radial-gradient(circle, rgba(255,181,71,0.30) 0%, transparent 65%)',
+            }}/>
+            <div style={{display:'flex', alignItems:'center', gap: 22, position:'relative'}}>
+              <div style={{
+                width: 88, height: 88, borderRadius: 22,
+                background: T.brownDeep, color: T.lime,
+                display:'grid', placeItems:'center', flex:'0 0 auto',
+                boxShadow:'0 12px 24px rgba(20,18,12,0.20)',
+              }}>
+                <Ic.Trophy s={42} c={T.lime}/>
+              </div>
+              <div style={{flex: 1}}>
+                <div style={{display:'flex', alignItems:'center', gap: 8, marginBottom: 6}}>
+                  <Pill tone="ink" size="sm">称号 · TIER 3</Pill>
+                  <span className="mono" style={{fontSize: 11, color: T.muted}}>S04 · 湖畔之春</span>
+                </div>
+                <div className="display" style={{fontSize: 32, fontWeight: 600, color: T.ink, letterSpacing:'-0.01em'}}>
+                  湖畔学徒
+                </div>
+                <div style={{fontSize: 13, color: T.muted, marginTop: 4}}>
+                  距下个称号「湖畔守望者」还差 <span style={{color: T.coral, fontWeight: 600}} className="mono">320 分</span> · 预计本周内可达
+                </div>
+              </div>
+              <div style={{display:'flex', flexDirection:'column', alignItems:'flex-end', gap: 12}}>
+                <div style={{textAlign:'right'}}>
+                  <div style={{fontSize: 10, color: T.muted, letterSpacing:'0.10em'}} className="mono">SCORE</div>
+                  <div className="display mono" style={{fontSize: 38, fontWeight: 700, color: T.ink, letterSpacing:'-0.02em', lineHeight: 1}}>
+                    <Counter value={score}/>
+                  </div>
+                </div>
+                <div style={{display:'flex', gap: 10, fontSize: 11, color: T.muted}} className="mono">
+                  <span>已解锁 <b style={{color: T.ink}}>{earned}</b>/{total}</span>
+                  <span>·</span>
+                  <span>本赛季新增 <b style={{color: T.coral}}>+3</b></span>
+                </div>
+              </div>
+            </div>
+            <div style={{
+              marginTop: 16, fontSize: 13, color: T.ink2, lineHeight: 1.5,
+              padding:'10px 14px', background:'rgba(20,18,12,0.04)', borderRadius: 12,
+            }}>
+              <span style={{color: T.brownDeep, fontWeight: 600}}>你在校园里的每次行动</span>，都会沉淀成赛季称号、徽章与档案
+            </div>
+          </div>
+
+          {/* Tabs */}
+          <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom: 14}}>
+            <div style={{
+              display:'flex', gap: 4, padding: 4,
+              background: T.surface, borderRadius: 12,
+              border:`1px solid ${T.line}`,
+            }}>
+              {[{k:'badges', label:`徽章 · ${earned}/${total}`},{k:'archive', label:'赛季档案'}].map(t => (
+                <button key={t.k} onClick={() => setTab(t.k)} style={{
+                  padding:'8px 16px', borderRadius: 9,
+                  background: tab === t.k ? T.brownDeep : 'transparent',
+                  color: tab === t.k ? '#FFF' : T.muted,
+                  fontSize: 13, fontWeight: 600, transition:'all 200ms',
+                }}>{t.label}</button>
+              ))}
+            </div>
+            {tab === 'badges' && (
+              <div style={{display:'flex', gap: 6}}>
+                {[
+                  {k:'all', label:'全部'},{k:'season', label:'本赛季'},
+                  {k:'limited', label:'限定'},{k:'place', label:'地点'},{k:'event', label:'事件'},
+                ].map(c => (
+                  <button key={c.k} onClick={() => setFilter(c.k)} style={{
+                    padding:'7px 13px', borderRadius: 999,
+                    background: filter === c.k ? T.brownDeep : T.surface,
+                    color: filter === c.k ? '#FFF' : T.ink2,
+                    border: `1px solid ${filter === c.k ? T.brownDeep : T.line}`,
+                    fontSize: 12, fontWeight: 500,
+                  }}>{c.label}</button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {tab === 'badges' && (
+            <Fragment>
+              <div style={{display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap: 12}}>
+                {filtered.map(b => {
+                  const progress = state.badges[b.id] ?? BADGE_STATIC[b.id].baseProgress;
+                  const recent = state.recentBadges?.includes(b.id);
+                  return <BadgeCard key={b.id} b={b} progress={progress} recent={recent}/>;
+                })}
+              </div>
+              <div style={{
+                marginTop: 14,
+                background: T.surface, borderRadius: 14,
+                border:`1px solid ${T.line}`, padding:'12px 16px',
+                fontSize: 12.5, color: T.muted, lineHeight: 1.5,
+                display:'flex', gap: 10, alignItems:'flex-start',
+              }}>
+                <Ic.Spark s={14} c={T.limeDeep}/>
+                <span>完成<b style={{color: T.ink}}>探索 · 恢复 · 组队</b>等校园任务，徽章与称号会在这里持续累积。本赛季限定徽章在 06.20 收摊</span>
+              </div>
+            </Fragment>
+          )}
+
+          {tab === 'archive' && <ArchivePane state={state} totalEarned={earned}/>}
+        </div>
+      );
+    }
+
+    /* ================================================================
+       APP
+    ================================================================ */
+    function App() {
+      const [screen, setScreen] = useState('home');
+      const [toasts, setToasts] = useState([]);
+      const [state, setState] = useState({
+        vitality: 280, seasonLit: 14, seasonTotal: 22,
+        litAreas: ['arts'], onboardDismissed: false,
+        taskState: { t1:'idle', t2:'idle', t3:'idle' },
+        mapTaskState: { m1:'idle', m2:'idle', m3:'idle', m4:'idle', m5:'idle' },
+        playState: { p1:'idle', p2:'idle', p3:'idle', p4:'idle' },
+        badges: Object.fromEntries(Object.entries(BADGE_STATIC).map(([k, v]) => [k, v.baseProgress])),
+        recentBadges: [],
+      });
+
+      const pushToast = useCallback((toast) => {
+        const id = Math.random().toString(36).slice(2);
+        setToasts(t => [...t, {id, ...toast}]);
+        setTimeout(() => setToasts(t => t.filter(x => x.id !== id)), 2800);
+      }, []);
+
+      const bumpBadge = useCallback((bid, pts) => {
+        if (!bid) return;
+        setState(s => ({
+          ...s,
+          badges: { ...s.badges, [bid]: Math.min(100, (s.badges[bid] ?? 0) + pts) },
+          recentBadges: [...new Set([...(s.recentBadges || []), bid])],
+        }));
+      }, []);
+
+      const lightArea = useCallback((zone) => {
+        if (!zone) return;
+        setState(s => s.litAreas.includes(zone) ? s : ({
+          ...s, litAreas: [...s.litAreas, zone],
+          seasonLit: Math.min(s.seasonTotal, s.seasonLit + 1),
+        }));
+      }, []);
+
+      const actions = useMemo(() => ({
+        toast: pushToast,
+        dismissOnboard: () => setState(s => ({...s, onboardDismissed: true})),
+        completeTask: (task) => {
+          setState(s => {
+            if (s.taskState[task.id] === 'completed') return s;
+            return {...s, taskState: {...s.taskState, [task.id]: 'completed'}, vitality: s.vitality + task.reward};
+          });
+          if (task.affectsBadge) bumpBadge(task.affectsBadge, task.badgePoints);
+          if (task.litArea) lightArea(task.litArea);
+          pushToast({
+            title: `任务完成 · +${task.reward} 活力`,
+            detail: task.litArea ? `点亮「${ZONE_BY_ID[task.litArea]}」 · 徽章已推进` : '徽章进度已推进',
+            icon:'check',
+          });
+        },
+        startMapTask: (poi) => {
+          setState(s => ({...s, mapTaskState: {...s.mapTaskState, [poi.id]: 'inProgress'}}));
+          pushToast({title: `已开始 · ${poi.name}`, detail: `${poi.method} · 预计 ${poi.duration}`, icon:'pin'});
+        },
+        completeMapTask: (poi) => {
+          setState(s => ({...s, mapTaskState: {...s.mapTaskState, [poi.id]: 'completed'}, vitality: s.vitality + poi.reward}));
+          if (poi.affectsBadge) bumpBadge(poi.affectsBadge, poi.badgePoints);
+          if (poi.zone) lightArea(poi.zone);
+          pushToast({title: `任务完成 · +${poi.reward} 活力`, detail: `点亮「${ZONE_BY_ID[poi.zone]}」区域`, icon:'check'});
+        },
+        joinPlay: (item) => {
+          setState(s => {
+            if (s.playState[item.id] === 'joined') return s;
+            return {...s, playState: {...s.playState, [item.id]: 'joined'}};
+          });
+          if (item.affectsBadge) bumpBadge(item.affectsBadge, item.badgePoints);
+          pushToast({title: `已加入 · ${item.title}`, detail: `推进「春日共玩」徽章 · 等待开始`, icon:'group'});
+        },
+      }), [pushToast, bumpBadge, lightArea]);
+
+      useEffect(() => {
+        if (!state.recentBadges?.length) return;
+        const t = setTimeout(() => setState(s => ({...s, recentBadges: []})), 5500);
+        return () => clearTimeout(t);
+      }, [state.recentBadges]);
+
+      const Screen =
+        screen === 'home' ? <ScreenHome state={state} actions={actions} onJump={setScreen}/> :
+        screen === 'map'  ? <ScreenMap state={state} actions={actions}/> :
+        screen === 'play' ? <ScreenPlay state={state} actions={actions} onJump={setScreen}/> :
+                            <ScreenBadges state={state} actions={actions}/>;
+
+      return (
+        <div className="cq-shell" style={{
+          display:'grid', gridTemplateColumns: '244px 1fr',
+          minHeight:'100vh', background: T.bg,
+        }}>
+          <Sidebar active={screen} setActive={setScreen} state={state}/>
+          <main className="softscroll" style={{minHeight:'100vh', minWidth: 0}}>
+            <TopBar state={state} screen={screen}/>
+            <ToastHost toasts={toasts}/>
+            {Screen}
+          </main>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
